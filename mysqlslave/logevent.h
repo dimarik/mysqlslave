@@ -133,30 +133,30 @@ namespace mysql {
 enum Log_event_type
 {
 	// Every time you update this enum (when you add a type), you have to fix CFormatDescriptionLogEvent
-	UNKNOWN_EVENT= 0,
-	START_EVENT_V3= 1,
-	QUERY_EVENT= 2,
-	STOP_EVENT= 3,
-	ROTATE_EVENT= 4,
-	INTVAR_EVENT= 5,
-	LOAD_EVENT= 6,
-	SLAVE_EVENT= 7,
-	CREATE_FILE_EVENT= 8,
-	APPEND_BLOCK_EVENT= 9,
-	EXEC_LOAD_EVENT= 10,
-	DELETE_FILE_EVENT= 11,
+	UNKNOWN_EVENT = 0,
+	START_EVENT_V3 = 1,
+	QUERY_EVENT = 2,
+	STOP_EVENT = 3,
+	ROTATE_EVENT = 4,
+	INTVAR_EVENT = 5,
+	LOAD_EVENT = 6,
+	SLAVE_EVENT = 7,
+	CREATE_FILE_EVENT = 8,
+	APPEND_BLOCK_EVENT = 9,
+	EXEC_LOAD_EVENT = 10,
+	DELETE_FILE_EVENT = 11,
 	/*
 	NEW_LOAD_EVENT is like LOAD_EVENT except that it has a longer
 	sql_ex, allowing multibyte TERMINATED BY etc; both types share the
 	same class (Load_log_event)
 	*/
-	NEW_LOAD_EVENT= 12,
-	RAND_EVENT= 13,
-	USER_VAR_EVENT= 14,
-	FORMAT_DESCRIPTION_EVENT= 15,
-	XID_EVENT= 16,
-	BEGIN_LOAD_QUERY_EVENT= 17,
-	EXECUTE_LOAD_QUERY_EVENT= 18,
+	NEW_LOAD_EVENT = 12,
+	RAND_EVENT = 13,
+	USER_VAR_EVENT = 14,
+	FORMAT_DESCRIPTION_EVENT = 15,
+	XID_EVENT = 16,
+	BEGIN_LOAD_QUERY_EVENT = 17,
+	EXECUTE_LOAD_QUERY_EVENT = 18,
 
 	TABLE_MAP_EVENT = 19,
 
@@ -171,7 +171,7 @@ enum Log_event_type
 	DELETE_ROWS_EVENT = 25,
 
 	// Something out of the ordinary happened on the master
-	INCIDENT_EVENT= 26,
+	INCIDENT_EVENT = 26,
 
 	/*
 	Add new events here - right above this comment!
@@ -204,7 +204,7 @@ public:
 	virtual const char* get_type_code_str() const = 0;
 	virtual bool is_valid() const = 0;
 
-	virtual int tune(uint8_t *data, size_t size, const CFormatDescriptionLogEvent& fmt);
+	virtual int tune(uint8_t* data, size_t size, const CFormatDescriptionLogEvent& fmt);
 	
 public:
 	time_t _when;
@@ -214,10 +214,12 @@ public:
 	uint16_t _flags;
 
 VDEBUG_CHUNK (
-public: virtual void dump(FILE *stream) const {
+public:
+	virtual void dump(FILE* stream) const
+	{
 		char buf[64];
-		char *when = ctime_r(&_when, buf);
-		when[strlen(buf)-1] = '\0';
+		char* when = ctime_r(&_when, buf);
+		when[strlen(buf) - 1] = '\0';
 		//char *ctime_r(const time_t *timep, char *buf);
 		fprintf(stream, "#%d %s: %s, log pos %llu\n", 
 				get_type_code(), get_type_code_str(), when, (unsigned long long)_log_pos);
@@ -456,9 +458,10 @@ protected:
 class CRowLogEvent : public CLogEvent
 {
 public:
-	CRowLogEvent() : _valid(0) {
+	CRowLogEvent()
+		: _valid(0)
+	{
 	}
-	
 	
 	virtual Log_event_type get_type_code() const { return (Log_event_type)_type; }
 	virtual const char* get_type_code_str() const {

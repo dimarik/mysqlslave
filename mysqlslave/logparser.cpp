@@ -1,4 +1,3 @@
-
 #include "logparser.h"
 
 namespace mysql {
@@ -21,13 +20,18 @@ CLogParser::~CLogParser() throw()
 
 void CLogParser::connect()
 {
-	if (!mysql_init(&_mysql) ) throw CException("mysql_init() failed");
+	if (!mysql_init(&_mysql) )
+	{
+		throw CException("mysql_init() failed");
+	}
 
 	if (mysql_real_connect(&_mysql, _host.c_str(), _user.c_str(), _passwd.c_str(), 0, _port, 0, 0) == 0 )
+	{
 		throw CException("mysql_real_connect() to '%s:%d' with user '%s' failed: %s",
 			_host.c_str(), _port ? _port : 3306, _user.c_str(), mysql_error(&_mysql));
+	}
 		
-	_is_connected=true;
+	_is_connected = true;
 }
 
 void CLogParser::reconnect()
@@ -42,16 +46,16 @@ void CLogParser::reconnect()
 void CLogParser::disconnect()
 {
 	mysql_close(&_mysql);
-	_is_connected=false;
+	_is_connected = false;
 }
 
 
 void CLogParser::set_connection_params(const char* host, uint32_t slave_id, const char* user, const char* passwd, int port)
 {
-	_host	= host;
-	_user	= user;
-	_passwd	= passwd;
-	_port	= port;
+	_host = host;
+	_user = user;
+	_passwd = passwd;
+	_port = port;
 	_slave_id = slave_id;
 }
 
@@ -75,18 +79,26 @@ void CLogParser::get_binlog_format()
 		!( version = row[0] )
 	)
 	{
-		if (res) mysql_free_result(res);
+		if (res)
+		{
+			mysql_free_result(res);
+		}
 		throw CException("could not get server version: '%s'", mysql_error(&_mysql));
 	}
 
-	if (*version != '5' )
+	if (*version != '5')
 	{
-		if (res) mysql_free_result(res);
+		if (res)
+		{
+			mysql_free_result(res);
+		}
 		throw CException("invalid server version '%s'", version);
 	}
 	
 	if (_fmt.tune(4, version) != 0)
+	{
 		throw std::runtime_error("cannot tune format log description");
+	}
 }
 
 
@@ -94,14 +106,19 @@ void CLogParser::request_binlog_dump()
 {
 	unsigned char buf[1024];
 	
-	if (_binlog_name.empty() || !_binlog_pos) throw CException("binlog name or position is empty");
+	if (_binlog_name.empty() || !_binlog_pos)
+	{
+		throw CException("binlog name or position is empty");
+	}
 
 	int4store(buf, _binlog_pos);
 	int2store(buf + 4, 0); // flags
 	int4store(buf + 6, _slave_id); 
 	memcpy(buf + 10, _binlog_name.c_str(), _binlog_name.length());
 	if (simple_command(&_mysql, COM_BINLOG_DUMP, (const unsigned char*)buf, _binlog_name.length() + 10, 1) )
+	{
 		throw CException("binlog dump request from '%s:%d' failed", _binlog_name.c_str(), _binlog_pos);
+	}
 }
 
 
@@ -221,7 +238,9 @@ void CLogParser::dispatch_events()
 					on_insert(*tbl, tbl->get_rows());
 				}
 				else
+				{
 					throw CLogEventException(&event_row, "tuning failed");
+				}
 			}
 			break;
 		}
@@ -236,7 +255,9 @@ void CLogParser::dispatch_events()
 					on_update(*tbl, tbl->get_new_rows(), tbl->get_rows());
 				}
 				else
+				{
 					throw CLogEventException(&event_row, "tuning failed");
+				}
 			}
 			break;
 		}	
@@ -251,7 +272,9 @@ void CLogParser::dispatch_events()
 					on_delete(*tbl, tbl->get_rows());
 				}
 				else
+				{
 					throw CLogEventException(&event_row, "tuning failed");
+				}
 			}
 			break;
 		}
@@ -263,7 +286,9 @@ void CLogParser::dispatch_events()
 				VDEBUG_CHUNK(event_unhandled.dump(stderr);)
 			}
 			else
+			{
 				throw CLogEventException(&event_unhandled, "rows event tuning failed");
+			}
 		}
 		}
 		
@@ -306,7 +331,10 @@ void CLogParser::build_db_structure()
 	
 	TDatabases::iterator it_dbs;
 	
-	if (_databases.empty()) throw std::runtime_error("build_db_structure() failed: no databases filtered");
+	if (_databases.empty())
+	{
+		throw std::runtime_error("build_db_structure() failed: no databases filtered");
+	}
 	
 	if ((res_db = mysql_list_dbs(&_mysql, NULL)) == NULL )
 	{
@@ -316,12 +344,18 @@ void CLogParser::build_db_structure()
 	
 	while ( (row = mysql_fetch_row(res_db)) != NULL )
 	{
-		if ((it_dbs = _databases.find(row[0])) != _databases.end()  )
+		if ((it_dbs = _databases.find(row[0])) != _databases.end())
 		{
 			if (mysql_select_db(&_mysql, row[0]) || (res_tbl = mysql_list_tables(&_mysql, NULL)) == NULL)
 			{
-				if (res_db) mysql_free_result(res_db);
-				if (res_tbl) mysql_free_result(res_tbl);
+				if (res_db)
+				{
+					mysql_free_result(res_db);
+				}
+				if (res_tbl)
+				{
+					mysql_free_result(res_tbl);
+				}
 				throw CException("build_db_structure() call to 'mysql_list_tables()' failed: %s", mysql_error(&_mysql));
 				return;
 			}
@@ -336,13 +370,22 @@ void CLogParser::build_db_structure()
 					if (mysql_query(&_mysql, query) != 0 || (res_column = mysql_store_result(&_mysql)) == NULL)
 					{
 						throw CException("build_db_structure() call to '%s' failed: %s", query, mysql_error(&_mysql));
-						if (res_db) mysql_free_result(res_db);
-						if (res_tbl) mysql_free_result(res_tbl);
-						if (res_column) mysql_free_result(res_tbl);
+						if (res_db)
+						{
+							mysql_free_result(res_db);
+						}
+						if (res_tbl)
+						{
+							mysql_free_result(res_tbl);
+						}
+						if (res_column)
+						{
+							mysql_free_result(res_tbl);
+						}
 						return;
 					}
 					
-					size_t pos=0;
+					size_t pos = 0;
 					while ((row = mysql_fetch_row(res_column)) != NULL) 
 					{
 						tbl->add_column(row[0], pos++, row[1]);
@@ -356,12 +399,23 @@ void CLogParser::build_db_structure()
 		}
 	}
 	
-	if (_binlog_name.empty() || !_binlog_pos) get_last_binlog_position();
+	if (_binlog_name.empty() || !_binlog_pos)
+	{
+		get_last_binlog_position();
+	}
 	
-	if (res_db) mysql_free_result(res_db);
-	if (res_tbl) mysql_free_result(res_tbl);
-	if (res_column) mysql_free_result(res_tbl);
-	
+	if (res_db)
+	{
+		mysql_free_result(res_db);
+	}
+	if (res_tbl)
+	{
+		mysql_free_result(res_tbl);
+	}
+	if (res_column)
+	{
+		mysql_free_result(res_tbl);
+	}
 }
 
 void CLogParser::get_last_binlog_position()
@@ -372,7 +426,10 @@ void CLogParser::get_last_binlog_position()
 	if (mysql_query(&_mysql, "SHOW MASTER STATUS") || (res = mysql_store_result(&_mysql)) == NULL)
 	{
 		throw CException("get_last_binlog_position() call to 'show master status' failed: %s", mysql_error(&_mysql));
-		if (res) mysql_free_result(res);
+		if (res)
+		{
+			mysql_free_result(res);
+		}
 		return;
 	}
 	
@@ -396,8 +453,5 @@ void CLogParser::get_last_binlog_position()
 	}
 }
 
-
-
-
-
 }
+

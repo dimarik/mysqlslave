@@ -1,7 +1,6 @@
 #ifndef MYSQL_DATABASE_H
 #define MYSQL_DATABASE_H
 
-
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
@@ -20,7 +19,7 @@ namespace mysql {
 
 struct CCaseIgnorer
 { 
-	bool operator() (const std::string &s1, const std::string &s2) const
+	bool operator() (const std::string& s1, const std::string& s2) const
 	{
 		return strcasecmp(s1.c_str(), s2.c_str()) > 0;	
 	}
@@ -57,7 +56,7 @@ public:
 	}
 
 protected:
-	CTable *_table;
+	CTable* _table;
 	CValue _null_value;
 	std::vector<CValue> _data;
 };
@@ -75,11 +74,11 @@ public:
 		if (it == _data.end()) return 0;
 		return &(it->second);
 	}
+
 private:
 	typedef std::map<std::string, CColumnDesc, CCaseIgnorer> data_type;
 	data_type _data;
 
-	
 public:
 	CTable()
 		: _tuned(false)
@@ -89,7 +88,7 @@ public:
 	{
 	}
 	
-	virtual int tune(uint8_t *data, size_t size, const CFormatDescriptionLogEvent& fmt);
+	virtual int tune(uint8_t* data, size_t size, const CFormatDescriptionLogEvent& fmt);
 	virtual bool is_valid() const
 	{
 		return _tuned;
@@ -106,9 +105,9 @@ public:
 	
 	void add_column(const std::string& column_name, int column_pos, const std::string& column_type);
 	
-	int update(CRowLogEvent &rlev);
+	int update(CRowLogEvent& rlev);
 protected:
-	int update_row(CRow &row, const uint8_t **pdata, size_t *len, uint64_t ncolumns, uint64_t usedcolumns_mask, uint64_t nullfields_mask);
+	int update_row(CRow& row, const uint8_t** pdata, size_t* len, uint64_t ncolumns, uint64_t usedcolumns_mask, uint64_t nullfields_mask);
 
 protected:
 	CRow _row;
@@ -142,7 +141,6 @@ public:
 		_data[s] = t;
 	}
 };
-
 
 }
 

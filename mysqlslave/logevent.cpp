@@ -26,7 +26,7 @@ CLogEvent::~CLogEvent() throw()
 {
 }
 
-int CLogEvent::tune(uint8_t *data, size_t size, const CFormatDescriptionLogEvent& fmt) 
+int CLogEvent::tune(uint8_t* data, size_t size, const CFormatDescriptionLogEvent& fmt) 
 {
 	_when = uint4korr(data);
 	_server_id = uint4korr(data + SERVER_ID_OFFSET);
@@ -59,32 +59,32 @@ int CFormatDescriptionLogEvent::tune(uint8_t binlog_ver, const char* server_ver)
 		memcpy(_server_version, server_ver, ST_SERVER_VER_LEN);
 			
 		_common_header_len = LOG_EVENT_HEADER_LEN;
-		_post_header_len[START_EVENT_V3-1]= START_V3_HEADER_LEN;
-		_post_header_len[QUERY_EVENT-1]= QUERY_HEADER_LEN;
-		_post_header_len[STOP_EVENT-1]= STOP_HEADER_LEN;
-		_post_header_len[ROTATE_EVENT-1]= ROTATE_HEADER_LEN;
-		_post_header_len[INTVAR_EVENT-1]= INTVAR_HEADER_LEN;
-		_post_header_len[LOAD_EVENT-1]= LOAD_HEADER_LEN;
-		_post_header_len[SLAVE_EVENT-1]= SLAVE_HEADER_LEN;
-		_post_header_len[CREATE_FILE_EVENT-1]= CREATE_FILE_HEADER_LEN;
-		_post_header_len[APPEND_BLOCK_EVENT-1]= APPEND_BLOCK_HEADER_LEN;
-		_post_header_len[EXEC_LOAD_EVENT-1]= EXEC_LOAD_HEADER_LEN;
-		_post_header_len[DELETE_FILE_EVENT-1]= DELETE_FILE_HEADER_LEN;
-		_post_header_len[NEW_LOAD_EVENT-1]= NEW_LOAD_HEADER_LEN;
-		_post_header_len[RAND_EVENT-1]= RAND_HEADER_LEN;
-		_post_header_len[USER_VAR_EVENT-1]= USER_VAR_HEADER_LEN;
-		_post_header_len[FORMAT_DESCRIPTION_EVENT-1]= FORMAT_DESCRIPTION_HEADER_LEN;
-		_post_header_len[XID_EVENT-1]= XID_HEADER_LEN;
-		_post_header_len[BEGIN_LOAD_QUERY_EVENT-1]= BEGIN_LOAD_QUERY_HEADER_LEN;
-		_post_header_len[EXECUTE_LOAD_QUERY_EVENT-1]= EXECUTE_LOAD_QUERY_HEADER_LEN;
-		_post_header_len[PRE_GA_WRITE_ROWS_EVENT-1] = 0;
-		_post_header_len[PRE_GA_UPDATE_ROWS_EVENT-1] = 0;
-		_post_header_len[PRE_GA_DELETE_ROWS_EVENT-1] = 0;
-		_post_header_len[TABLE_MAP_EVENT-1]=    TABLE_MAP_HEADER_LEN;
-		_post_header_len[WRITE_ROWS_EVENT-1]=   ROWS_HEADER_LEN;
-		_post_header_len[UPDATE_ROWS_EVENT-1]=  ROWS_HEADER_LEN;
-		_post_header_len[DELETE_ROWS_EVENT-1]=  ROWS_HEADER_LEN;
-		_post_header_len[INCIDENT_EVENT-1]= INCIDENT_HEADER_LEN;
+		_post_header_len[START_EVENT_V3 - 1]= START_V3_HEADER_LEN;
+		_post_header_len[QUERY_EVENT - 1]= QUERY_HEADER_LEN;
+		_post_header_len[STOP_EVENT - 1]= STOP_HEADER_LEN;
+		_post_header_len[ROTATE_EVENT - 1]= ROTATE_HEADER_LEN;
+		_post_header_len[INTVAR_EVENT - 1]= INTVAR_HEADER_LEN;
+		_post_header_len[LOAD_EVENT - 1]= LOAD_HEADER_LEN;
+		_post_header_len[SLAVE_EVENT - 1]= SLAVE_HEADER_LEN;
+		_post_header_len[CREATE_FILE_EVENT - 1]= CREATE_FILE_HEADER_LEN;
+		_post_header_len[APPEND_BLOCK_EVENT - 1]= APPEND_BLOCK_HEADER_LEN;
+		_post_header_len[EXEC_LOAD_EVENT - 1]= EXEC_LOAD_HEADER_LEN;
+		_post_header_len[DELETE_FILE_EVENT - 1]= DELETE_FILE_HEADER_LEN;
+		_post_header_len[NEW_LOAD_EVENT - 1]= NEW_LOAD_HEADER_LEN;
+		_post_header_len[RAND_EVENT - 1]= RAND_HEADER_LEN;
+		_post_header_len[USER_VAR_EVENT - 1]= USER_VAR_HEADER_LEN;
+		_post_header_len[FORMAT_DESCRIPTION_EVENT - 1]= FORMAT_DESCRIPTION_HEADER_LEN;
+		_post_header_len[XID_EVENT - 1]= XID_HEADER_LEN;
+		_post_header_len[BEGIN_LOAD_QUERY_EVENT - 1]= BEGIN_LOAD_QUERY_HEADER_LEN;
+		_post_header_len[EXECUTE_LOAD_QUERY_EVENT - 1]= EXECUTE_LOAD_QUERY_HEADER_LEN;
+		_post_header_len[PRE_GA_WRITE_ROWS_EVENT - 1] = 0;
+		_post_header_len[PRE_GA_UPDATE_ROWS_EVENT - 1] = 0;
+		_post_header_len[PRE_GA_DELETE_ROWS_EVENT - 1] = 0;
+		_post_header_len[TABLE_MAP_EVENT - 1]=    TABLE_MAP_HEADER_LEN;
+		_post_header_len[WRITE_ROWS_EVENT - 1]=   ROWS_HEADER_LEN;
+		_post_header_len[UPDATE_ROWS_EVENT - 1]=  ROWS_HEADER_LEN;
+		_post_header_len[DELETE_ROWS_EVENT - 1]=  ROWS_HEADER_LEN;
+		_post_header_len[INCIDENT_EVENT - 1]= INCIDENT_HEADER_LEN;
 	}
 	else 
 	{
@@ -106,7 +106,7 @@ bool CFormatDescriptionLogEvent::is_valid() const
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  */
-int CRotateLogEvent::tune(uint8_t *data, size_t size, const CFormatDescriptionLogEvent& fmt)
+int CRotateLogEvent::tune(uint8_t* data, size_t size, const CFormatDescriptionLogEvent& fmt)
 {
 	int rc = CLogEvent::tune(data, size, fmt);
 	if (rc == 0)
@@ -115,8 +115,8 @@ int CRotateLogEvent::tune(uint8_t *data, size_t size, const CFormatDescriptionLo
 		size -= fmt._common_header_len;
 		
 		_position = uint8korr(data);
-		_new_log = data+8;
-		_len = size-8;
+		_new_log = data + 8;
+		_len = size - 8;
 	}
 	
 	return rc;
@@ -126,14 +126,14 @@ int CRotateLogEvent::tune(uint8_t *data, size_t size, const CFormatDescriptionLo
 /*
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 */
-int CIntvarLogEvent::tune(uint8_t *data, size_t size, const CFormatDescriptionLogEvent& fmt) 
+int CIntvarLogEvent::tune(uint8_t* data, size_t size, const CFormatDescriptionLogEvent& fmt) 
 {
 	int rc = CLogEvent::tune(data, size, fmt);
 	if (rc == 0)
 	{
 		data += fmt._common_header_len + fmt._post_header_len[INTVAR_EVENT-1];
-		_type= data[I_TYPE_OFFSET];
-		_val= uint8korr(data+I_VAL_OFFSET);
+		_type = data[I_TYPE_OFFSET];
+		_val = uint8korr(data+I_VAL_OFFSET);
 	}
 	return rc;
 }
@@ -144,7 +144,7 @@ int CIntvarLogEvent::tune(uint8_t *data, size_t size, const CFormatDescriptionLo
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 */
 
-int CQueryLogEvent::tune(uint8_t *data, size_t size, const CFormatDescriptionLogEvent& fmt)
+int CQueryLogEvent::tune(uint8_t* data, size_t size, const CFormatDescriptionLogEvent& fmt)
 {
 	uint8_t common_header_len, post_header_len;
 	uint64_t data_len;
@@ -155,7 +155,7 @@ int CQueryLogEvent::tune(uint8_t *data, size_t size, const CFormatDescriptionLog
 	if (rc == 0)
 	{
 		common_header_len = fmt._common_header_len;
-		post_header_len= fmt._post_header_len[QUERY_EVENT-1];
+		post_header_len = fmt._post_header_len[QUERY_EVENT - 1];
 
 		data_len = size - (common_header_len + post_header_len);
 		data += common_header_len;
@@ -193,20 +193,20 @@ int CQueryLogEvent::tune(uint8_t *data, size_t size, const CFormatDescriptionLog
 /*
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 */
-uint64_t CTableMapLogEvent::get_table_id(uint8_t *data, size_t size, const CFormatDescriptionLogEvent& fmt)
+uint64_t CTableMapLogEvent::get_table_id(uint8_t* data, size_t size, const CFormatDescriptionLogEvent& fmt)
 {
-	uint8_t *post_start = data + fmt._common_header_len + TM_MAPID_OFFSET;
-	return fmt._post_header_len[TABLE_MAP_EVENT-1] == 6 ? (uint64_t)uint4korr(post_start) : (uint64_t)uint6korr(post_start);
+	uint8_t* post_start = data + fmt._common_header_len + TM_MAPID_OFFSET;
+	return fmt._post_header_len[TABLE_MAP_EVENT - 1] == 6 ? (uint64_t)uint4korr(post_start) : (uint64_t)uint6korr(post_start);
 }
 
-const char* CTableMapLogEvent::get_database_name(uint8_t *data, size_t size, const CFormatDescriptionLogEvent& fmt)
+const char* CTableMapLogEvent::get_database_name(uint8_t* data, size_t size, const CFormatDescriptionLogEvent& fmt)
 {
-	return (const char*)(data + fmt._common_header_len + fmt._post_header_len[TABLE_MAP_EVENT-1] + 1);
+	return (const char*)(data + fmt._common_header_len + fmt._post_header_len[TABLE_MAP_EVENT - 1] + 1);
 }
 
-const char* CTableMapLogEvent::get_table_name(uint8_t *data, size_t size, const CFormatDescriptionLogEvent& fmt)
+const char* CTableMapLogEvent::get_table_name(uint8_t* data, size_t size, const CFormatDescriptionLogEvent& fmt)
 {
-	uint8_t *p = data + fmt._common_header_len + fmt._post_header_len[TABLE_MAP_EVENT-1];
+	uint8_t* p = data + fmt._common_header_len + fmt._post_header_len[TABLE_MAP_EVENT - 1];
 	return (const char*)(p + *p + 3);
 }
 
@@ -225,12 +225,12 @@ CTableMapLogEvent::~CTableMapLogEvent() throw()
 {
 	if( _data ) delete [] _data;
 }
-const char * CTableMapLogEvent::get_database_name() const
+const char* CTableMapLogEvent::get_database_name() const
 {
 	return _db_name;
 }
 
-const char * CTableMapLogEvent::get_table_name() const
+const char* CTableMapLogEvent::get_table_name() const
 {
 	return _table_name;
 }
@@ -240,18 +240,17 @@ int CTableMapLogEvent::get_column_count() const
 	return _column_count;
 }
 
-int CTableMapLogEvent::tune(uint8_t *data, size_t size, const CFormatDescriptionLogEvent& fmt)
+int CTableMapLogEvent::tune(uint8_t* data, size_t size, const CFormatDescriptionLogEvent& fmt)
 {
 	CLogEvent::tune(data, size, fmt);
-	if( _data )
-		delete [] _data;
+	if( _data ) delete [] _data;
 	_size = size;
 	_data = new uint8_t[_size];
 	memcpy(_data, data, _size);
 
 	_table_id = get_table_id(_data, size, fmt);
 	
-	uint8_t *p;
+	uint8_t* p;
 	uint8_t len = 0;
 	
 	// db name
@@ -280,9 +279,9 @@ int CTableMapLogEvent::tune(uint8_t *data, size_t size, const CFormatDescription
 /*
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 */
-int CRowLogEvent::tune(uint8_t *data, size_t size, const CFormatDescriptionLogEvent& fmt) 
+int CRowLogEvent::tune(uint8_t* data, size_t size, const CFormatDescriptionLogEvent& fmt) 
 {
-	const uint8_t *p;
+	const uint8_t* p;
 	
 	CLogEvent::tune(data, size, fmt);
 	_valid = 0;
@@ -301,15 +300,13 @@ int CRowLogEvent::tune(uint8_t *data, size_t size, const CFormatDescriptionLogEv
 	_ncolumns = net_field_length((u_char**)&p);
 	
 	_used_columns_mask = build_column_mask(&p, NULL, _ncolumns);
-	if( _used_columns_mask == (uint64_t) -1 )
-		return -1;
+	if( _used_columns_mask == (uint64_t) - 1 ) return -1;
 	update_n1bits(&_used_columns_mask);
 	
 	if( _type == UPDATE_ROWS_EVENT )
 	{
 		_used_columns_afterimage_mask = build_column_mask(&p, NULL, _ncolumns);
-		if( _used_columns_afterimage_mask == (uint64_t) -1 )
-			return -1;
+		if( _used_columns_afterimage_mask == (uint64_t) - 1 ) return -1;
 		update_n1bits(&_used_columns_afterimage_mask);
 	}
 	
@@ -329,12 +326,12 @@ void CRowLogEvent::update_n1bits(uint64_t *mask)
 	{
 		if (m & 0x01) nbits++;
 	}
-	while (m>>=1);
+	while (m >>= 1);
 	
-	*mask = (*mask & 0x00FFFFFFFFFFFFFFLL) | ((uint64_t)nbits << (64-8));
+	*mask = (*mask & 0x00FFFFFFFFFFFFFFLL) | ((uint64_t)nbits << (64 - 8));
 }
 
-uint64_t CRowLogEvent::build_column_mask(const uint8_t **ptr, size_t *len, uint64_t n)
+uint64_t CRowLogEvent::build_column_mask(const uint8_t** ptr, size_t* len, uint64_t n)
 {
 	uint64_t column_mask;
 	uint8_t l = uint8_t((n+7)/8);
@@ -374,7 +371,7 @@ uint64_t CRowLogEvent::build_column_mask(const uint8_t **ptr, size_t *len, uint6
 	default:
 	{
 		// wrong column number
-		return (uint64_t)-1;
+		return (uint64_t) - 1;
 	}
 	}
 	

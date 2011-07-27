@@ -25,7 +25,7 @@ public:
 	{
 		_position = pos;
 		_variants.clear();
-		if (!field_type.empty() && (field_type.compare(0, 4, "enum")==0 || field_type.compare(0, 3, "set")==0))
+		if (!field_type.empty() && (field_type.compare(0, 4, "enum") == 0 || field_type.compare(0, 3, "set") == 0))
 		{
 			size_t pos1 = 0, pos2 = 0;
 			while (1)
@@ -51,6 +51,7 @@ public:
 	{
 		return _variants;
 	}
+
 private:
 	size_t _position;
 	TVariants _variants;

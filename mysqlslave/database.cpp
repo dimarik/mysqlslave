@@ -33,15 +33,15 @@ int CTable::tune(uint8_t* data, size_t size, const CFormatDescriptionLogEvent& f
 	if (_tuned) return 0;
 
 	int rc;
-	if ((rc=CTableMapLogEvent::tune(data, size, fmt)) == 0 && CTableMapLogEvent::is_valid())
+	if ((rc = CTableMapLogEvent::tune(data, size, fmt)) == 0 && CTableMapLogEvent::is_valid())
 	{
 		_row.set_table(this);
 		_row.resize(_column_count);
-		uint8_t *type = _column_types;
+		uint8_t* type = _column_types;
 		for (unsigned int i = 0; i < _column_count; ++i)
 		{
 			_row[i].pos(i);
-			_row[i]._type = (CValue::EColumnType)*type++;
+			_row[i]._type = (CValue::EColumnType) * type++;
 		}
 		_tuned = true;
 	}
@@ -49,13 +49,13 @@ int CTable::tune(uint8_t* data, size_t size, const CFormatDescriptionLogEvent& f
 	return rc;
 }
 
-int CTable::update(CRowLogEvent &rlev)
+int CTable::update(CRowLogEvent& rlev)
 {
-	const uint8_t *pfields;
+	const uint8_t* pfields;
 	size_t len;
 	uint64_t nullfields_mask;
 	
-	if( !rlev.is_valid() || _table_id != rlev._table_id)
+	if( !rlev.is_valid() || _table_id != rlev._table_id )
 		return -1;
 	
 	pfields = rlev.rows_data();
@@ -79,7 +79,7 @@ int CTable::update(CRowLogEvent &rlev)
 	return len == 0 ? 0 : -1;
 }
 
-int CTable::update_row(CRow &row, const uint8_t **pdata, size_t *len, uint64_t ncolumns, uint64_t usedcolumns_mask, uint64_t nullfields_mask)
+int CTable::update_row(CRow& row, const uint8_t** pdata, size_t* len, uint64_t ncolumns, uint64_t usedcolumns_mask, uint64_t nullfields_mask)
 {
 	CValue::EColumnType type;
 	uint32_t metadata;
@@ -104,7 +104,11 @@ int CTable::update_row(CRow &row, const uint8_t **pdata, size_t *len, uint64_t n
 	bit = 0x01;
 	for (uint64_t i = 0; i < ncolumns; ++i)
 	{
-		if (size<=0) { row[i].reset(); continue; } // NOTE: achtung; exception is here
+		if (size <= 0)
+		{
+			row[i].reset();
+			continue;
+		} // NOTE: achtung; exception is here
 		
 		type = (CValue::EColumnType)*(_column_types + i);
 		switch (CValue::calc_metadata_size(type))
@@ -151,7 +155,6 @@ void CTable::add_column(const std::string& column_name, int column_pos, const st
 {
 	_data[column_name].update(column_pos, column_type);
 }
-
 
 }
 

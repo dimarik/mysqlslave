@@ -2,6 +2,7 @@
 
 namespace mysql
 {
+
 /* 
  * ========================================= CValue
  * ========================================================
@@ -41,7 +42,7 @@ int CValue::calc_field_size(CValue::EColumnType ftype, const uint8_t *pfield, ui
 		break;
 	case MYSQL_TYPE_NEWDECIMAL:
 	{
-		static const int dig2bytes[10]={0, 1, 1, 2, 2, 3, 3, 4, 4, 4};
+		static const int dig2bytes[10] = {0, 1, 1, 2, 2, 3, 3, 4, 4, 4};
 		int precision = (int)(metadata >> 8); //10
 		int scale = (int)(metadata & 0xff); //0
 		int intg = precision - scale; //10
@@ -49,13 +50,13 @@ int CValue::calc_field_size(CValue::EColumnType ftype, const uint8_t *pfield, ui
 		int frac0 = scale / 9; //0
 		int intg0x = intg - intg0*9; //1
 		int frac0x = scale - frac0*9; //0
-		length = intg0 * sizeof(int32_t) + dig2bytes[intg0x] + frac0*sizeof(int32_t) + dig2bytes[frac0x];
+		length = intg0 * sizeof(int32_t) + dig2bytes[intg0x] + frac0 * sizeof(int32_t) + dig2bytes[frac0x];
 		break;
 	}
 	case MYSQL_TYPE_DECIMAL:
 	case MYSQL_TYPE_FLOAT:
 	case MYSQL_TYPE_DOUBLE:
-		length= metadata;
+		length = metadata;
 		break;
 	/*
 	The cases for SET and ENUM are include for completeness, however
@@ -155,7 +156,7 @@ int CValue::calc_field_size(CValue::EColumnType ftype, const uint8_t *pfield, ui
 		break;
 	}
 	default:
-		length= ~(uint32_t) 0;
+		length = ~(uint32_t) 0;
 	}
 	
 	return length;
@@ -229,7 +230,7 @@ bool CValue::is_null() const
 }
 
 
-int CValue::tune(CValue::EColumnType ftype, const uint8_t *pfield, uint32_t metadata, size_t length)
+int CValue::tune(CValue::EColumnType ftype, const uint8_t* pfield, uint32_t metadata, size_t length)
 {
 	_metadata = metadata;
 	_storage = pfield;
@@ -277,7 +278,7 @@ int CValue::tune(CValue::EColumnType ftype, const uint8_t *pfield, uint32_t meta
 		}
 		case MYSQL_TYPE_VARCHAR:
 		{
-			if (_metadata<256)
+			if (_metadata < 256)
 			{
 				_size = *_storage;
 				_storage++;
@@ -304,7 +305,10 @@ int CValue::tune(CValue::EColumnType ftype, const uint8_t *pfield, uint32_t meta
 				}
 			}
 			
-			if (!_is_null) _storage += _metadata;
+			if (!_is_null)
+			{
+				_storage += _metadata;
+			}
 			break;
 		}
 		default:
@@ -322,12 +326,18 @@ double CValue::as_double() const
 	
 	if (is_null() || !is_valid()) return db;
 	
-	if (_size == 4) 
+	if (_size == 4)
+	{
 		float4get(db, _storage);
-	else if (_size == 8) 
+	}
+	else if (_size == 8)
+	{
 		float8get(db, _storage);
-	else 
+	}
+	else
+	{
 		db = 0;
+	}
 	
 	return db;
 }
@@ -342,26 +352,21 @@ bool CValue::as_boolean() const
 	return as_uint8() != 0;
 }
 
-
-
-
-
-
 time_t CValue::as_timestamp() const 
 {
-	return _is_null || !is_valid() || _size != 4 ? 0 : (time_t)uint4korr(_storage) ;
+	return _is_null || !is_valid() || _size != 4 ? 0 : (time_t)uint4korr(_storage);
 }
 
 CValue::TDate CValue::as_date() const
 {
 	TDate d;
-	if (_is_null || !is_valid() || _size<3)
+	if (_is_null || !is_valid() || _size < 3)
 	{
 		memset(&d, 0x00, sizeof(TDate));
 		return d;
 	}
 	
-	uint32_t dd= uint3korr(_storage);
+	uint32_t dd = uint3korr(_storage);
 	d.y = dd / (16L * 32L);
 	d.m = dd / 32L % 16L;
 	d.d = dd % 32L;
@@ -372,13 +377,13 @@ CValue::TDate CValue::as_date() const
 CValue::TTime CValue::as_time() const
 {
 	TTime t;
-	if (is_null() || !is_valid() || _size<3)
+	if (is_null() || !is_valid() || _size < 3)
 	{
 		memset(&t, 0x00, sizeof(TTime));
 		return t;
 	}
 	
-	uint32_t tt= uint3korr(_storage);
+	uint32_t tt = uint3korr(_storage);
 	t.h = tt / 10000;
 	t.m = (tt % 10000) / 100;
 	t.s = tt % 100;
@@ -391,7 +396,7 @@ CValue::TDateTime CValue::as_datetime() const
 {
 	TDateTime datetime;
 	
-	if (is_null() || !is_valid() || _size<8)
+	if (is_null() || !is_valid() || _size < 8)
 	{
 		memset(&datetime, 0x00, sizeof(CValue::TDateTime));
 		return datetime;
@@ -454,8 +459,15 @@ const char* CValue::as_string(size_t* length) const
 void CValue::as_string(std::string& dst) const
 {
 	size_t len;
-	const char *cstr = as_string(&len);
-	if (cstr && len > 0) dst.assign(cstr, len); else dst.clear();
+	const char* cstr = as_string(&len);
+	if (cstr && len > 0)
+	{
+		dst.assign(cstr, len);
+	}
+	else
+	{
+		dst.clear();
+	}
 }
 
 std::string CValue::as_string() const
@@ -499,9 +511,13 @@ void CValue::as_enum(const mysql::CColumnDesc& desc, std::string& result) const
 	uint64_t pos = as_enum() - 1;
 	
 	if (desc.get_variants().size() > pos)
+	{
 		result = desc.get_variants()[pos];
+	}
 	else
+	{
 		result.clear();
+	}
 }
 
 std::string CValue::as_enum(const mysql::CColumnDesc& desc) const
@@ -530,7 +546,7 @@ void CValue::as_set(const mysql::CColumnDesc& desc, CValue::TSet& result) const
 			else
 				return;
 		}
-		pos++;
+		++pos;
 		mask >>= 0x01;
 	}
 }
@@ -541,21 +557,17 @@ std::string CValue::as_set(const mysql::CColumnDesc& desc) const
 	CValue::TSet tset;
 	as_set(desc, tset);
 	for (CValue::TSet::const_iterator it = tset.begin(); it != tset.end(); ++it) 
+	{
 		s += *it + " ";
+	}
 	
-	if (!s.empty()) s.erase(s.size()-1, 1);
-	
+	if (!s.empty())
+	{
+		s.erase(s.size()-1, 1);
+	}	
 	
 	return s;
 }
-
-
-
-
-
-
-
-
 
 std::ostream& operator<<(std::ostream& os, const CValue::TDate& d)
 {
@@ -626,7 +638,7 @@ std::ostream& operator<<(std::ostream& os, const CValue& val)
 			char buf[64];
 			time_t t = val.as_timestamp();
 			int n = ::sprintf(buf, "%s", ::ctime(&t));
-			if (n>1) buf[n-1] = '\0';
+			if (n > 1) buf[n - 1] = '\0';
 			os << buf;
 			break;
 		}

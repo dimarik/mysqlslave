@@ -10,7 +10,6 @@
 
 #define MYSQL_ERRMSG_MAX_LEN 1024
 
-
 namespace mysql 
 {
 	
@@ -36,7 +35,6 @@ public:
 protected:
 	char _errmsg[MYSQL_ERRMSG_MAX_LEN];
 };
-
 
 class CLogEventException : public std::exception
 {
@@ -72,7 +70,6 @@ protected:
 };
 
 }
-
 
 #endif
 

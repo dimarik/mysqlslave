@@ -11,36 +11,39 @@
 #include "database.h"
 #include "exceptions.hpp"
 #include <map>
+
 namespace mysql {
 
 class CLogParser 
 {
 public:
 	typedef std::map<std::string, CDatabase, CCaseIgnorer> TDatabases;
+
 public:
 	CLogParser();
 	virtual ~CLogParser() throw();
 
-	void set_connection_params(const char *host, uint32_t slave_id, const char *user, const char *passwd, int port = 0);
-	void set_binlog_position(const char *fname, uint32_t pos, uint16_t flags = 0);
+	void set_connection_params(const char* host, uint32_t slave_id, const char* user, const char* passwd, int port = 0);
+	void set_binlog_position(const char* fname, uint32_t pos, uint16_t flags = 0);
 	
 	void prepare();
 	void dispatch_events();
 	void stop_event_loop();
 	
-	volatile int dispatch() const {return _dispatch;}
+	volatile int dispatch() const { return _dispatch; }
 
 public:
 	void watch(const std::string& db_name, const std::string& table_name);
+
 protected:
-	virtual int on_insert(const CTable &table, const CTable::TRows &newrows) = 0;
-	virtual int on_update(const CTable &table, const CTable::TRows &newrows, const CTable::TRows &oldrows) = 0;
-	virtual int on_delete(const CTable &table, const CTable::TRows &newrows) = 0;
+	virtual int on_insert(const CTable& table, const CTable::TRows& newrows) = 0;
+	virtual int on_update(const CTable& table, const CTable::TRows& newrows, const CTable::TRows& oldrows) = 0;
+	virtual int on_delete(const CTable& table, const CTable::TRows& newrows) = 0;
 		
 	
 protected:
-	virtual void pre_reconnect(MYSQL *mysql) {}
-	virtual void post_reconnect(MYSQL *mysql) {}
+	virtual void pre_reconnect(MYSQL* mysql) {}
+	virtual void post_reconnect(MYSQL* mysql) {}
 	
 protected:
 	void connect();
@@ -69,8 +72,6 @@ protected:
 private:
 	volatile int _dispatch;
 };
-
-
 
 }
 

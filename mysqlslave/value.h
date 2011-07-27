@@ -55,16 +55,16 @@ public:
 		MYSQL_TYPE_NEWDATE = 14,
 		MYSQL_TYPE_VARCHAR = 15,
 		MYSQL_TYPE_BIT,
-		MYSQL_TYPE_NEWDECIMAL=246,
-		MYSQL_TYPE_ENUM=247,
-		MYSQL_TYPE_SET=248,
-		MYSQL_TYPE_TINY_BLOB=249,
-		MYSQL_TYPE_MEDIUM_BLOB=250,
-		MYSQL_TYPE_LONG_BLOB=251,
-		MYSQL_TYPE_BLOB=252,
-		MYSQL_TYPE_VAR_STRING=253,
-		MYSQL_TYPE_STRING=254,
-		MYSQL_TYPE_GEOMETRY=255
+		MYSQL_TYPE_NEWDECIMAL = 246,
+		MYSQL_TYPE_ENUM = 247,
+		MYSQL_TYPE_SET = 248,
+		MYSQL_TYPE_TINY_BLOB = 249,
+		MYSQL_TYPE_MEDIUM_BLOB = 250,
+		MYSQL_TYPE_LONG_BLOB = 251,
+		MYSQL_TYPE_BLOB = 252,
+		MYSQL_TYPE_VAR_STRING = 253,
+		MYSQL_TYPE_STRING = 254,
+		MYSQL_TYPE_GEOMETRY = 255
 	};
 	
 	typedef std::vector<std::string> TSet;
@@ -77,9 +77,9 @@ public:
 	CValue(const CValue& val);
 	virtual ~CValue() throw();
 
-	CValue& operator=(const CValue &val);
-	bool operator==(const CValue &val) const;
-	bool operator!=(const CValue &val) const;
+	CValue& operator=(const CValue& val);
+	bool operator==(const CValue& val) const;
+	bool operator!=(const CValue& val) const;
 	
 	bool is_valid() const;
 	bool is_null() const;
@@ -115,7 +115,7 @@ public:
 	
 	
 	double as_double() const;
-	float as_float() const {return (float)as_double();};
+	float as_float() const { return (float)as_double(); }
 	double as_real() const { return as_double(); }
 
 	uint64_t as_bit() const;
@@ -161,9 +161,6 @@ protected:
 };
 
 }
-
-
-
 
 #endif
 
