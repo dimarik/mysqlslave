@@ -1,4 +1,4 @@
-#include <mysqlslave/logparser.hpp>
+#include <mysqlslave/logparser.h>
 
 namespace mysql {
 
