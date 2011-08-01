@@ -92,7 +92,7 @@ void test_daemon::run()
 void test_daemon::connect_mysql_repl()
 {
 	set_connection_params("localhost", time(0), "repl", "qwerty", 3306);
-	watch("testm", "aaa");
+	watch("test", "mysqlslave");
 	prepare();
 }
 
@@ -121,7 +121,6 @@ int test_daemon::on_insert(const mysql::CTable& tbl, const mysql::CTable::TRows&
 fprintf(stdout, "INSERT\n");
 	if (strcasecmp(tbl.get_table_name(), "mysqlslave") == 0)
 	{
-		fprintf(stdout, "catch insert\n");
 		for (mysql::CTable::TRows::const_iterator it = rows.begin(); it != rows.end(); ++it)
 		{
 			fprintf(stdout, "id: %d\nnumber: %d\nword: %s\n", (*it)["id"].as_int32(), (*it)["number"].as_int32(), (*it)["word"].as_string().c_str());

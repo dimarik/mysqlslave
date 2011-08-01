@@ -175,7 +175,6 @@ void CLogParser::dispatch_events()
 		if (!_fmt.is_supported(event_type) && event_type != FORMAT_DESCRIPTION_EVENT )
 			throw CLogEventException(event_type, "not supported");
 		
-		
 		switch (event_type)
 		{
 		case ROTATE_EVENT:
