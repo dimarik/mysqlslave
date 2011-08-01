@@ -1,6 +1,8 @@
 #ifndef LOGEVENT_H_
 #define LOGEVENT_H_
 
+#define VDEBUG
+
 #ifdef VDEBUG
 #define VDEBUG_CHUNK(x) x;
 #else
