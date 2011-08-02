@@ -1,5 +1,7 @@
 #include <time.h>
 #include <signal.h>
+#include <unistd.h>
+#include <getopt.h>
 #include "test_mysqlslave.hpp"
 
 static void* __replication_thread_proc(void* ptr)
@@ -58,8 +60,50 @@ void signal_handler(int sig)
 	}
 }
 
-void test_daemon::init()
+void test_daemon::init(int argc, char** argv)
 {
+	char host[256], user[256], passwd[256], db[256], table[256];
+	snprintf(host, 256, "localhost");
+	user[0] = '\0';
+	passwd[0] = '\0';
+	db[0] = '\0';
+	table[0] = '\0';
+	int port = 3306;
+	
+	int c;
+	while ((c = getopt(argc, argv, "hu:p::d:t:")) != -1)
+	{
+		switch (c)
+		{
+			case 'h':
+				snprintf(host, 256, "%s", optarg);
+				break;
+			case 'u':
+				snprintf(user, 256, "%s", optarg);
+				break;
+			case 'p':
+				char* buf;
+				if (!optarg)
+				{
+					buf = getpass("Password:");
+				}
+				else
+				{
+					buf = optarg;
+				}
+				snprintf(passwd, 256, "%s", buf);
+				break;
+			case 'd':
+				snprintf(db, 256, "%s", optarg);
+				break;
+			case 't':
+				snprintf(table, 256, "%s", optarg);
+				break;
+		}
+	}
+
+	connect_mysql_repl(host, user, passwd, port, db, table);
+
 	test_daemon_ptr = this;
 	for (int sig = 1; sig < 32; sig++)
 	{
@@ -74,8 +118,6 @@ void test_daemon::init()
 
 void test_daemon::run()
 {
-	connect_mysql_repl();
-
 	int rc = pthread_create(&th_repl, 0, &__replication_thread_proc, this);
 	if (rc)
 	{
@@ -89,10 +131,10 @@ void test_daemon::run()
 	}
 }
 
-void test_daemon::connect_mysql_repl()
+void test_daemon::connect_mysql_repl(const char* host, const char* user, const char* passwd, int port, const char* db, const char* table)
 {
-	set_connection_params("localhost", time(0), "repl", "qwerty", 3306);
-	watch("test", "mysqlslave");
+	set_connection_params(host, time(0), user, passwd, port);
+	watch(db, table);
 	prepare();
 }
 
@@ -119,14 +161,6 @@ void test_daemon::replication_thread_proc()
 int test_daemon::on_insert(const mysql::CTable& tbl, const mysql::CTable::TRows& rows)
 {
 fprintf(stdout, "INSERT\n");
-	if (strcasecmp(tbl.get_table_name(), "mysqlslave") == 0)
-	{
-		for (mysql::CTable::TRows::const_iterator it = rows.begin(); it != rows.end(); ++it)
-		{
-			fprintf(stdout, "id: %d\nnumber: %d\nword: %s\n", (*it)["id"].as_int32(), (*it)["number"].as_int32(), (*it)["word"].as_string().c_str());
-		}
-	}
-
 	return 0;
 }
 

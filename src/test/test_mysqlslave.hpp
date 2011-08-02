@@ -7,7 +7,7 @@ class test_daemon : public mysql::CLogParser
 
 	MYSQL DB;
 	pthread_t th_repl;
-	void connect_mysql_repl();
+	void connect_mysql_repl(const char* host, const char* user, const char* passwd, int port, const char* db, const char* table);
 
 	int on_insert(const mysql::CTable& tbl, const mysql::CTable::TRows& rows);
 	int on_update(const mysql::CTable& tbl, const mysql::CTable::TRows& rows, const mysql::CTable::TRows& old_rows);
@@ -19,7 +19,7 @@ public:
 
 	void replication_thread_proc();
 	void terminate();
-	void init();
+	void init(int argc, char** argv);
 	void run();
 };
 
