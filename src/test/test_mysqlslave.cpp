@@ -71,7 +71,7 @@ void test_daemon::init(int argc, char** argv)
 	int port = 3306;
 	
 	int c;
-	while ((c = getopt(argc, argv, "hu:p::")) != -1)
+	while ((c = getopt(argc, argv, "h:u:p::")) != -1)
 	{
 		switch (c)
 		{
