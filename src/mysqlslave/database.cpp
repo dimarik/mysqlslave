@@ -1,6 +1,6 @@
-
 #include <mysqlslave/database.hpp>
 #include <fstream>
+
 namespace mysql {
 
 /* 
