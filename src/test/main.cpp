@@ -9,8 +9,6 @@ int main(int argc, char** argv)
 -h		host\n\
 -u		user\n\
 -p		password\n\
--d		database name\n\
--t		table name\n\
 ");
 		return 0;
 	}

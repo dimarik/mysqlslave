@@ -1,0 +1,10 @@
+DROP DATABASE IF EXISTS test_mysqlslave_db;
+CREATE DATABASE test_mysqlslave_db;
+USE test_mysqlslave_db;
+
+CREATE TABLE `test_table` (
+	`id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+	`number` int(11),
+	`string` VARCHAR(255),
+	PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

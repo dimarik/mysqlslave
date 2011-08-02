@@ -71,7 +71,7 @@ void test_daemon::init(int argc, char** argv)
 	int port = 3306;
 	
 	int c;
-	while ((c = getopt(argc, argv, "hu:p::d:t:")) != -1)
+	while ((c = getopt(argc, argv, "hu:p::")) != -1)
 	{
 		switch (c)
 		{
@@ -93,16 +93,10 @@ void test_daemon::init(int argc, char** argv)
 				}
 				snprintf(passwd, 256, "%s", buf);
 				break;
-			case 'd':
-				snprintf(db, 256, "%s", optarg);
-				break;
-			case 't':
-				snprintf(table, 256, "%s", optarg);
-				break;
 		}
 	}
 
-	connect_mysql_repl(host, user, passwd, port, db, table);
+	connect_mysql_repl(host, user, passwd, port);
 
 	test_daemon_ptr = this;
 	for (int sig = 1; sig < 32; sig++)
@@ -131,10 +125,10 @@ void test_daemon::run()
 	}
 }
 
-void test_daemon::connect_mysql_repl(const char* host, const char* user, const char* passwd, int port, const char* db, const char* table)
+void test_daemon::connect_mysql_repl(const char* host, const char* user, const char* passwd, int port)
 {
 	set_connection_params(host, time(0), user, passwd, port);
-	watch(db, table);
+	watch("test_mysqlslave_db", "test_table");
 	prepare();
 }
 
@@ -160,19 +154,26 @@ void test_daemon::replication_thread_proc()
 
 int test_daemon::on_insert(const mysql::CTable& tbl, const mysql::CTable::TRows& rows)
 {
-fprintf(stdout, "INSERT\n");
+	fprintf(stdout, "INSERT\n");
+	if (strcasecmp(tbl.get_table_name(), "test_table") == 0)
+	{
+		for (mysql::CTable::TRows::const_iterator it = rows.begin(); it != rows.end(); ++it)
+		{
+			fprintf(stdout, "id: %u, number: %d, string: %s\n", (*it)["id"].as_uint32(), (*it)["number"].as_int32(), (*it)["string"].as_string().c_str());
+		}
+	}
 	return 0;
 }
 
 int test_daemon::on_update(const mysql::CTable& tbl, const mysql::CTable::TRows& rows, const mysql::CTable::TRows& old_rows)
 {
-fprintf(stdout, "UPDATE\n");
+	fprintf(stdout, "UPDATE\n");
 	return 0;
 }
 
 int test_daemon::on_delete(const mysql::CTable& tbl, const mysql::CTable::TRows& rows)
 {
-fprintf(stdout, "DELETE\n");
+	fprintf(stdout, "DELETE\n");
 	return 0;
 }
 

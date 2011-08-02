@@ -130,9 +130,12 @@ class my_class : public mysql::CLogParser
 
 	int on_insert(const mysql::CTable& tbl, const mysql::CTable::TRows& rows)
 	{
-		for (mysql::CTable::TRows::const_iterator it = rows.begin(); it != rows.end(); ++it)
+		if (strcasecmp(tbl.get_table_name(), "db1_table1") == 0)
 		{
-			fprintf(stdout, "%u\n", *it["id"].as_uint32());
+			for (mysql::CTable::TRows::const_iterator it = rows.begin(); it != rows.end(); ++it)
+			{
+				fprintf(stdout, "%u\n", *it["id"].as_uint32());
+			}
 		}
 		return 0;
 	}

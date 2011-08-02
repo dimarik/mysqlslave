@@ -1,0 +1,11 @@
+Вместе с библиотекой компилируется тестовый пример, с помощью которого можно посмотреть работу CLogParser. Чтобы его запустить необходимо:
+	- Установить mysql версии не ниже 5.1
+	- В my.cnf, в раздел [mysqld] дописать:
+		log-bin
+		server-id=1
+		binlog_format=row
+	- Создать тестовую базу и тестовую таблицу из файла test_db.mysql
+	- Создать пользователя в mysql, который будет ловить репликацию:
+		mysql> GRANT SUPER, REPLICATION CLIENT, REPLICATION SLAVE, SELECT ON test_mysqlslave_db.* TO <YOUR_USER>@"localhost" IDENTIFIED BY '<YOUR_PASSWORD>';
+	- Запустить тестовый демон: ./test_mysqlslave -u <YOUR_USER> -p
+	- Внести изменения в таблицу test_table
