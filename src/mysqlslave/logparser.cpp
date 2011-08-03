@@ -168,12 +168,16 @@ void CLogParser::dispatch_events()
 		
 		buf++; len--;
 
-		if (len < EVENT_LEN_OFFSET || (uint32_t) len != uint4korr(buf+EVENT_LEN_OFFSET))
+		if (len < EVENT_LEN_OFFSET || (uint32_t) len != uint4korr(buf + EVENT_LEN_OFFSET))
+		{
 			throw CLogEventException((CLogEvent*)NULL, "event sanity check failed");
+		}
 
 		event_type = buf[EVENT_TYPE_OFFSET];
 		if (!_fmt.is_supported(event_type) && event_type != FORMAT_DESCRIPTION_EVENT )
+		{
 			throw CLogEventException(event_type, "not supported");
+		}
 		
 		switch (event_type)
 		{
@@ -186,7 +190,9 @@ void CLogParser::dispatch_events()
 				VDEBUG_CHUNK(event_rotate.dump(stderr);)
 			}
 			else
+			{
 				throw CLogEventException(&event_rotate, "tuning failed");
+			}
 			break;
 		}
 		case FORMAT_DESCRIPTION_EVENT:

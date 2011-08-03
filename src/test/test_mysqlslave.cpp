@@ -20,6 +20,7 @@ test_daemon::test_daemon()
 test_daemon::~test_daemon() throw()
 {
 	stop_event_loop();
+	::pthread_kill(th_repl, 28);
 	::pthread_kill(th_repl, SIGTERM);
 
 	if (th_repl)
