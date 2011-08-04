@@ -1,4 +1,4 @@
-You can configure replication for your any daemon (this daemon has to use MYSQL database, version not below 5.1, and row-based replication has to be configured) with class CLogParser. Class-child of CLogParser has to define three virtual functions:
+You can configure replication for your any daemon (this daemon has to use MYSQL database, version not below 5.1, and row-based replication has to be configured) with class CLogParser. Your daemon has to be child of CLogParser and has to define three virtual functions:
 
 	int on_insert(const mysql::CTable& tbl, const mysql::CTable::TRows& rows);
 	int on_update(const mysql::CTable& tbl, const mysql::CTable::TRows& rows, const mysql::CTable::TRows& old_rows);
