@@ -1,19 +1,19 @@
-С помощью класса CLogParser можно настроить репликацию у любого демона, работающего с базой данных MYSQL (Версия не ниже 5.1 и должна быть настроена Row-Based репликация). Класс-потомок CLogParser должен определить три виртуальных функции:
+You can configure replication for your any daemon (this daemon has to use MYSQL database, version not below 5.1, and row-based replication has to be configured) with class CLogParser. Class-child of CLogParser has to define three virtual functions:
 
 	int on_insert(const mysql::CTable& tbl, const mysql::CTable::TRows& rows);
 	int on_update(const mysql::CTable& tbl, const mysql::CTable::TRows& rows, const mysql::CTable::TRows& old_rows);
 	int on_delete(const mysql::CTable& tbl, const mysql::CTable::TRows& rows);
 
-	tbl -- изменяемая таблица
-	rows -- новые строки таблицы (в on_delete -- это удаленные строки)
-	old_rows -- старые строки, которые были изменены после UPDATE-запроса
+	tbl -- changed table
+	rows -- new rows of the table (in on_delete "rows" -- deleted rows)
+	old_rows -- old rows, which were changed by UPDATE-query
 
-Класс mysql::CTable::TRows представляет собой std::list<mysql::CRow>. Для класса CRow определены операторы:
+Class mysql::CTable::TRows is std::list<mysql::CRow>. These operators are defined for class CRow:
 
 	const CValue& operator[](const std::string& name) const;
 	const CValue& operator[](size_t i) const;
 
-Для извлечения значения в нужном формате из класса CValue предусмотрены функции:
+In order to get value from CValue in appropriate format, these functions are defined:
 
 	typedef uint16_t TYear;
 	typedef struct
@@ -61,11 +61,11 @@
 	uint64_t as_enum() const;
 	uint64_t as_set() const;
 
-Чтобы указать, для каких таблиц следует отлавливать изменения, нужно использовать функцию:
+In order to select tables for which you want to catch changes, you should use the function:
 
 	void watch(const std::string& db_name, const std::string& table_name);
 
-Репликация запускается отдельным потоком, в котором должен быть слeдующий цикл:
+You need special thread for replication. It has to contain the loop:
 
 	while (dispatch())
 	{
@@ -79,9 +79,9 @@
 		}
 	}
 
-Для завершения репликации нужно вызвать функцию stop_event_loop().
+You have to use stop_event_loop() for interrupt of replication loop.
 
-Пример кода:
+Code example:
 
 class my_class : public mysql::CLogParser
 {
