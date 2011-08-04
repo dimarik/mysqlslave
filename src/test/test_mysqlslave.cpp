@@ -20,7 +20,6 @@ test_daemon::test_daemon()
 test_daemon::~test_daemon() throw()
 {
 	stop_event_loop();
-	::pthread_kill(th_repl, 28);
 	::pthread_kill(th_repl, SIGTERM);
 
 	if (th_repl)
@@ -39,7 +38,6 @@ static test_daemon* test_daemon_ptr = 0;
 
 void signal_handler(int sig)
 {
-	signal(sig, SIG_IGN);
 	if (!test_daemon_ptr) return;
 	switch (sig)
 	{
