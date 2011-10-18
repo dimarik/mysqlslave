@@ -9,3 +9,4 @@
 		mysql> GRANT SUPER, REPLICATION CLIENT, REPLICATION SLAVE, SELECT ON test_mysqlslave_db.* TO <YOUR_USER>@"localhost" IDENTIFIED BY '<YOUR_PASSWORD>';
 	- Запустить тестовый демон: ./test_mysqlslave -u <YOUR_USER> -p
 	- Внести изменения в таблицу test_table
+
