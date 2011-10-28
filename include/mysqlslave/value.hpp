@@ -5,7 +5,9 @@
 #include <time.h>
 #include <string>
 #include <iostream>
-#include <iomanip> 
+#include <iomanip>
+#include <limits>
+#include <assert.h>
 
 #include "logevent.hpp"
 #include "columndesc.hpp"

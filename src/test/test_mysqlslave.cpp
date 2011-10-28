@@ -61,12 +61,14 @@ void signal_handler(int sig)
 
 void test_daemon::init(int argc, char** argv)
 {
-	char host[256], user[256], passwd[256], db[256], table[256];
+	char host[256], user[256], passwd[256];/*, db[256], table[256]*/
 	snprintf(host, 256, "localhost");
 	user[0] = '\0';
 	passwd[0] = '\0';
+	/*
 	db[0] = '\0';
 	table[0] = '\0';
+	*/
 	int port = 3306;
 	
 	int c;
