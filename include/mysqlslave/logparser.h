@@ -15,6 +15,7 @@ namespace mysql {
 
 class CLogParser 
 {
+	std::map<uint64_t, CTable*> _id_2_table;
 public:
 	typedef std::map<std::string, CDatabase, CCaseIgnorer> TDatabases;
 

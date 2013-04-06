@@ -141,7 +141,6 @@ void CLogParser::dispatch_events()
 	uint32_t event_type;
 	uint8_t* buf;
 	TDatabases::iterator it_dbs;
-	CTable* tbl = 0;
 	
 	do
 	{
@@ -178,7 +177,7 @@ void CLogParser::dispatch_events()
 		{
 			throw CLogEventException(event_type, "not supported");
 		}
-		
+
 		switch (event_type)
 		{
 		case ROTATE_EVENT:
@@ -211,10 +210,17 @@ void CLogParser::dispatch_events()
 		}		
 		case TABLE_MAP_EVENT:
 		{
+			CTable* tbl = 0;
 			it_dbs = _databases.find(CTableMapLogEvent::get_database_name(buf, len, _fmt));
 			if (it_dbs != _databases.end())
 			{
-				tbl = it_dbs->second.get_table(CTableMapLogEvent::get_table_name(buf, len, _fmt));
+				std::string _tbl_name = CTableMapLogEvent::get_table_name(buf, len, _fmt);
+				tbl = it_dbs->second.get_table(_tbl_name);
+				if (tbl)
+				{
+					_id_2_table[tbl->get_table_id(buf, len, _fmt)] = tbl;
+				}
+				//printf("MAP %s to %lu\n", CTableMapLogEvent::get_table_name(buf, len, _fmt), tbl->get_table_id(buf, len, _fmt));
 			}
 			else
 			{
@@ -234,52 +240,58 @@ void CLogParser::dispatch_events()
 		}
 		case WRITE_ROWS_EVENT:
 		{
-			if (tbl )
+			if (event_row.tune(buf, len, _fmt) == 0 )
 			{
-				if (event_row.tune(buf, len, _fmt) == 0 )
+				VDEBUG_CHUNK(event_row.dump(stderr));
+				std::map<uint64_t, CTable*>::const_iterator it = _id_2_table.find(event_row._table_id);
+				if (it != _id_2_table.end())
 				{
-					VDEBUG_CHUNK(event_row.dump(stderr);)
+					CTable* tbl = it->second;
 					tbl->update(event_row);
 					on_insert(*tbl, tbl->get_rows());
 				}
-				else
-				{
-					throw CLogEventException(&event_row, "tuning failed");
-				}
+			}
+			else
+			{
+				throw CLogEventException(&event_row, "tuning failed");
 			}
 			break;
 		}
 		case UPDATE_ROWS_EVENT:
 		{
-			if (tbl )
+			if (event_row.tune(buf, len, _fmt) == 0 )
 			{
-				if (event_row.tune(buf, len, _fmt) == 0 )
+				VDEBUG_CHUNK(event_row.dump(stderr);)
+				std::map<uint64_t, CTable*>::const_iterator it = _id_2_table.find(event_row._table_id);
+				if (it != _id_2_table.end())
 				{
-					VDEBUG_CHUNK(event_row.dump(stderr);)
+					CTable* tbl = it->second;
 					tbl->update(event_row);
 					on_update(*tbl, tbl->get_new_rows(), tbl->get_rows());
 				}
-				else
-				{
-					throw CLogEventException(&event_row, "tuning failed");
-				}
+			}
+			else
+			{
+				throw CLogEventException(&event_row, "tuning failed");
 			}
 			break;
 		}	
 		case DELETE_ROWS_EVENT:
 		{
-			if (tbl )
+			if (event_row.tune(buf, len, _fmt) == 0 )
 			{
-				if (event_row.tune(buf, len, _fmt) == 0 )
+				VDEBUG_CHUNK(event_row.dump(stderr);)
+				std::map<uint64_t, CTable*>::const_iterator it = _id_2_table.find(event_row._table_id);
+				if (it != _id_2_table.end())
 				{
-					VDEBUG_CHUNK(event_row.dump(stderr);)
+					CTable* tbl = it->second;
 					tbl->update(event_row);
 					on_delete(*tbl, tbl->get_rows());
 				}
-				else
-				{
-					throw CLogEventException(&event_row, "tuning failed");
-				}
+			}
+			else
+			{
+				throw CLogEventException(&event_row, "tuning failed");
 			}
 			break;
 		}
@@ -346,7 +358,7 @@ void CLogParser::build_db_structure()
 		throw CException("build_db_structure() call to 'show databases' failed: %s", mysql_error(&_mysql));
 		return;
 	}
-	
+
 	while ( (row = mysql_fetch_row(res_db)) != NULL )
 	{
 		if ((it_dbs = _databases.find(row[0])) != _databases.end())
@@ -364,7 +376,7 @@ void CLogParser::build_db_structure()
 				throw CException("build_db_structure() call to 'mysql_list_tables()' failed: %s", mysql_error(&_mysql));
 				return;
 			}
-			
+
 			while ( (row = mysql_fetch_row(res_tbl)) != NULL )
 			{
 				CTable* tbl = it_dbs->second.get_table(row[0]);
@@ -372,6 +384,7 @@ void CLogParser::build_db_structure()
 				{
 					char query[256];
 					sprintf(query, "SHOW COLUMNS FROM %s",row[0]);
+
 					if (mysql_query(&_mysql, query) != 0 || (res_column = mysql_store_result(&_mysql)) == NULL)
 					{
 						throw CException("build_db_structure() call to '%s' failed: %s", query, mysql_error(&_mysql));
