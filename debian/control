@@ -1,0 +1,18 @@
+Source: libmysqlslave-dev
+Section: devel
+Priority: extra
+Maintainer: Alexander Pankov <pianist@usrsrc.ru>
+Standards-Version: 3.7.2
+Homepage: https://github.com/dimarik/mysqlslave
+
+Package: libmysqlslave-dev
+Architecture: any
+Section: libdevel
+Depends: ${shlibs:Depends},
+         libc6 (>= 2.4),
+         libgcc1 (>= 1:4.1.1),
+         libstdc++6 (>= 4.5.0),
+         libmysqlclient-dev (>= 5.1)
+Description: MysqlSlave developement library
+  MysqlSlave developement library: good solution to connect C++ daemons to MysqlDB as a slave client
+

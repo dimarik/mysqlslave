@@ -1,0 +1,6 @@
+libmysqlslave-dev (0.1.0) stable; urgency=low
+
+  * initial version
+
+ -- Alexander Pankov <pianist@usrsrc.ru>  Thu, 21 Feb 2013 19:12:00 +0400
+
