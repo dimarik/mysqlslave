@@ -1,18 +1,18 @@
-Summary:	mysql replication
-Name:		mysqlslave
-Version:	1.0
+Summary:	mysql replication developement library
+Name:		libmysqlslave-devel
+Version:	0.1.0
 Release:	0%{?dist}
 
-Group:		Networking/Daemons
+Group:		Developement/Libraries
 License:	GPL
-Source:		mysqlslave.tar.gz
+Source:		libmysqlslave-%{version}.tar.gz
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %description
 mysql replication
 
 %prep
-%setup -q -n %{name}
+%setup -q -n libmysqlslave-%{version}
 
 
 %build
