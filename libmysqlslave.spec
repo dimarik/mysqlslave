@@ -38,7 +38,7 @@ rm -rf %{buildroot}
 %{_includedir}/mysqlslave/logevent.hpp
 %{_includedir}/mysqlslave/logparser.h
 %{_includedir}/mysqlslave/value.hpp
-%{_libdir}/libmysqlslave.so
+%{_libdir}/libmysqlslave.a
 
 
 
