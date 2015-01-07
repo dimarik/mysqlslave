@@ -320,8 +320,12 @@ int CValue::tune(CValue::EColumnType ftype, const uint8_t* pfield, uint32_t meta
 	return 0;
 }
 
+#ifndef likely
 #define likely(x)	__builtin_expect((x),1)
+#endif
+#ifndef unlikely
 #define unlikely(x)	__builtin_expect((x),0)
+#endif
 
 #define E_DEC_OK                0
 #define E_DEC_TRUNCATED         1
