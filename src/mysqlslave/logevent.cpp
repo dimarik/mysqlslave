@@ -232,6 +232,34 @@ int CTableMapLogEvent::get_column_count() const
 	return _column_count;
 }
 
+/* Taken from original MySQL sources, some versions of libmysqlclient does not export this function. */
+static ulong __net_field_length(uchar **packet)
+{
+	reg1 uchar *pos= (uchar *)*packet;
+	if (*pos < 251)
+	{
+		(*packet)++;
+		return (ulong) *pos;
+	}
+	if (*pos == 251)
+	{
+		(*packet)++;
+		return NULL_LENGTH;
+	}
+	if (*pos == 252)
+	{
+		(*packet)+=3;
+		return (ulong) uint2korr(pos+1);
+	}
+	if (*pos == 253)
+	{
+		(*packet)+=4;
+		return (ulong) uint3korr(pos+1);
+	}
+	(*packet)+=9;                                 /* Must be 254 when here */
+	return (ulong) uint4korr(pos+1);
+}
+
 int CTableMapLogEvent::tune(uint8_t* data, size_t size, const CFormatDescriptionLogEvent& fmt)
 {
 	CLogEvent::tune(data, size, fmt);
@@ -257,12 +285,12 @@ int CTableMapLogEvent::tune(uint8_t* data, size_t size, const CFormatDescription
 	p += len + 1;
 	
 	// column count
-	_column_count = net_field_length(&p);
+	_column_count = __net_field_length(&p);
 	_column_types = p;
 	p += _column_count;
 	
 	// metadata ptr
-	_metadata_length = net_field_length(&p);
+	_metadata_length = __net_field_length(&p);
 	_metadata = _metadata_length ? p : NULL;
 	return 0;
 }
@@ -289,7 +317,7 @@ int CRowLogEvent::tune(uint8_t* data, size_t size, const CFormatDescriptionLogEv
 	_row_flags= uint2korr(p);
 	
 	p+=2;
-	_ncolumns = net_field_length((u_char**)&p);
+	_ncolumns = __net_field_length((u_char**)&p);
 	
 	_used_columns_mask = build_column_mask(&p, NULL, _ncolumns);
 	if( _used_columns_mask == (uint64_t) - 1 ) return -1;
