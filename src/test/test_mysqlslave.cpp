@@ -169,6 +169,17 @@ int test_daemon::on_insert(const mysql::CTable& tbl, const mysql::CTable::TRows&
 int test_daemon::on_update(const mysql::CTable& tbl, const mysql::CTable::TRows& rows, const mysql::CTable::TRows& old_rows)
 {
 	fprintf(stdout, "UPDATE\n");
+
+	if (strcasecmp(tbl.get_table_name(), "test_table") == 0)
+	{
+		mysql::CTable::TRows::const_iterator jt = old_rows.begin();
+		for (mysql::CTable::TRows::const_iterator it = rows.begin(); it != rows.end(); ++it, ++jt)
+		{
+			fprintf(stdout, "id: %u, number: %d, string: %s\n", (*it)["id"].as_uint32(), (*it)["number"].as_int32(), (*it)["string"].as_string().c_str());
+			fprintf(stdout, "OLD: id: %u, number: %d, string: %s\n", (*jt)["id"].as_uint32(), (*jt)["number"].as_int32(), (*jt)["string"].as_string().c_str());
+		}
+	}
+
 	return 0;
 }
 
