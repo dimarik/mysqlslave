@@ -2,6 +2,8 @@ Summary:	mysql replication developement library
 Name:		libmysqlslave-devel
 Version:	0.1.1
 Release:	0%{?dist}
+BuildRequires:	cmake gcc-c++
+Requires:	mariadb-devel
 
 Group:		Developement/Libraries
 License:	GPL
@@ -43,5 +45,5 @@ rm -rf %{buildroot}
 %changelog
 
 * Sat Sep 26 2015 Alexander Pankov <pianisteg@gmail.com> - 0.1.1
-- MariaDB 5.5.x on CentOS 7
+- MariaDB 5.5.x and 10.0.x on CentOS 7
 
