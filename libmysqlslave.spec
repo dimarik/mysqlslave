@@ -1,6 +1,6 @@
 Summary:	mysql replication developement library
 Name:		libmysqlslave-devel
-Version:	0.1.0
+Version:	0.1.1
 Release:	0%{?dist}
 
 Group:		Developement/Libraries
@@ -40,7 +40,8 @@ rm -rf %{buildroot}
 %{_includedir}/mysqlslave/value.hpp
 %{_libdir}/libmysqlslave.a
 
-
-
 %changelog
+
+* Sat Sep 26 2015 Alexander Pankov <pianisteg@gmail.com> - 0.1.1
+- MariaDB 5.5.x on CentOS 7
 

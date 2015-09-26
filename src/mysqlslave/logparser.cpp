@@ -1,5 +1,12 @@
 #include <mysqlslave/logparser.h>
 
+#if MYSQL_VERSION_ID > 50541 && defined(MARIADB_BASE_VERSION)
+/* MariaDB-5.5.42 or later, with low-level mysql_net_ API */
+#else
+#define mysql_net_read_packet cli_safe_read
+#define mysql_net_field_length net_field_length
+#endif
+
 namespace mysql {
 
 CLogParser::CLogParser()
@@ -146,7 +153,7 @@ void CLogParser::dispatch_events()
 	{
 		while (_dispatch && !_is_connected) { reconnect(); sleep(1); }
 		
-		len = cli_safe_read(&_mysql);
+		len = mysql_net_read_packet(&_mysql);
 		
 		if (!_dispatch) return;
 		
