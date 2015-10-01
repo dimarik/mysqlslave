@@ -15,7 +15,6 @@
 #include <m_ctype.h>
 #include <my_sys.h>
 #include <my_dir.h>
-#include <sql_common.h>
 #undef HAVE_STPCPY
 #include <m_string.h>
 #include <mysqld_error.h>

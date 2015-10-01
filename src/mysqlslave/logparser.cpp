@@ -1,4 +1,5 @@
 #include <mysqlslave/logparser.h>
+#include <sql_common.h>
 
 #if MYSQL_VERSION_ID > 50541 && defined(MARIADB_BASE_VERSION)
 /* MariaDB-5.5.42 or later, with low-level mysql_net_ API */

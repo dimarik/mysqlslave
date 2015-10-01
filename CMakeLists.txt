@@ -18,6 +18,7 @@ FIND_PATH (INC_mysql mysql.h PATH_SUFFIXES mysql)
 IF (INC_mysql)
   MESSAGE (STATUS "FOUND ${INC_mysql}/mysql.h")  # SHOULD BE BOLD GREEN
   INCLUDE_DIRECTORIES (${INC_mysql})
+  INCLUDE_DIRECTORIES (${INC_mysql}/private)
 ELSE ()
   MESSAGE (STATUS "ERROR ${INC_mysql}/mysql.h")  # SHOULD BE BOLD RED
 ENDIF ()
