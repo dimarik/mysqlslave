@@ -160,7 +160,7 @@ int test_daemon::on_insert(const mysql::CTable& tbl, const mysql::CTable::TRows&
 	{
 		for (mysql::CTable::TRows::const_iterator it = rows.begin(); it != rows.end(); ++it)
 		{
-			fprintf(stdout, "id: %u, number: %d, string: %s\n", (*it)["id"].as_uint32(), (*it)["number"].as_int32(), (*it)["string"].as_string().c_str());
+			fprintf(stdout, "id: %u, number: %d, string: %s, amount: %.8lf\n", (*it)["id"].as_uint32(), (*it)["number"].as_int32(), (*it)["string"].as_string().c_str(), (*it)["amount"].as_double());
 		}
 	}
 	return 0;

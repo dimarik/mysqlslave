@@ -6,5 +6,6 @@ CREATE TABLE `test_table` (
 	`id` int(11) unsigned NOT NULL AUTO_INCREMENT,
 	`number` int(11),
 	`string` VARCHAR(255),
+	`amount` DECIMAL (16,8) DEFAULT 0.0,
 	PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

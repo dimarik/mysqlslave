@@ -94,7 +94,7 @@ void CLogParser::get_binlog_format()
 		throw CException("could not get server version: '%s'", mysql_error(&_mysql));
 	}
 
-	if (*version != '5' && strncmp(version, "10.0", 4))
+	if (*version != '5' && strncmp(version, "10.0", 4) && strncmp(version, "10.1", 4))
 	{
 		if (res)
 		{
