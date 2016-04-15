@@ -67,18 +67,14 @@ int CTable::update(CRowLogEvent& rlev)
 	{
 		nullfields_mask = ~rlev.build_column_mask(&pfields, &len, rlev.used_columns_1bit_count());
 		update_row(_row, &pfields, &len, rlev._ncolumns, rlev.used_columns_mask(), nullfields_mask);
-		if (len > 0)
+
+		_rows.push_back(_row);
+		if (!len) break;
+
+		if( rlev.get_type_code() == UPDATE_ROWS_EVENT )
 		{
-			_rows.push_back(_row);
-			if( rlev.get_type_code() == UPDATE_ROWS_EVENT )
-			{
-				nullfields_mask = ~rlev.build_column_mask(&pfields, &len, rlev.used_columns_afterimage_1bit_count());
-				update_row(_row, &pfields, &len, rlev._ncolumns, rlev.used_columns_afterimage_mask(), nullfields_mask);
-				_new_rows.push_back(_row);
-			}
-		}
-		else
-		{
+			nullfields_mask = ~rlev.build_column_mask(&pfields, &len, rlev.used_columns_afterimage_1bit_count());
+			update_row(_row, &pfields, &len, rlev._ncolumns, rlev.used_columns_afterimage_mask(), nullfields_mask);
 			_new_rows.push_back(_row);
 		}
 	}
@@ -118,6 +114,7 @@ int CTable::update_row(CRow& row, const uint8_t** pdata, size_t* len, uint64_t n
 		} // NOTE: achtung; exception is here
 		
 		type = (CValue::EColumnType)*(_column_types + i);
+
 		switch (CValue::calc_metadata_size(type))
 		{
 			case 0:

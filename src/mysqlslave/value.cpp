@@ -101,12 +101,17 @@ int CValue::calc_field_size(CValue::EColumnType ftype, const uint8_t *pfield, ui
 	case MYSQL_TYPE_NEWDATE:
 	case MYSQL_TYPE_DATE:
 	case MYSQL_TYPE_TIME:
+	case MYSQL_TYPE_TIME2:
 		length = 3;
 		break;
 	case MYSQL_TYPE_TIMESTAMP:
 		length = 4;
 		break;
+	case MYSQL_TYPE_TIMESTAMP2:
+		length = 4;
+		break;
 	case MYSQL_TYPE_DATETIME:
+	case MYSQL_TYPE_DATETIME2:
 		length = 8;
 		break;
 	case MYSQL_TYPE_BIT:
@@ -900,6 +905,7 @@ std::ostream& operator<<(std::ostream& os, const CValue& val)
 		}
 		
 		case MYSQL_TYPE_TIMESTAMP:
+		case MYSQL_TYPE_TIMESTAMP2:
 		{
 			char buf[64];
 			time_t t = val.as_timestamp();
@@ -914,11 +920,13 @@ std::ostream& operator<<(std::ostream& os, const CValue& val)
 			break;
 		}
 		case MYSQL_TYPE_TIME:
+		case MYSQL_TYPE_TIME2:
 		{
 			os << val.as_time();
 			break;
 		}
 		case MYSQL_TYPE_DATETIME:
+		case MYSQL_TYPE_DATETIME2:
 		{
 			os << val.as_datetime();
 			break;
