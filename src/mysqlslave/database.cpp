@@ -67,11 +67,18 @@ int CTable::update(CRowLogEvent& rlev)
 	{
 		nullfields_mask = ~rlev.build_column_mask(&pfields, &len, rlev.used_columns_1bit_count());
 		update_row(_row, &pfields, &len, rlev._ncolumns, rlev.used_columns_mask(), nullfields_mask);
-		_rows.push_back(_row);
-		if( rlev.get_type_code() == UPDATE_ROWS_EVENT )
+		if (len > 0)
 		{
-			nullfields_mask = ~rlev.build_column_mask(&pfields, &len, rlev.used_columns_afterimage_1bit_count());
-			update_row(_row, &pfields, &len, rlev._ncolumns, rlev.used_columns_afterimage_mask(), nullfields_mask);
+			_rows.push_back(_row);
+			if( rlev.get_type_code() == UPDATE_ROWS_EVENT )
+			{
+				nullfields_mask = ~rlev.build_column_mask(&pfields, &len, rlev.used_columns_afterimage_1bit_count());
+				update_row(_row, &pfields, &len, rlev._ncolumns, rlev.used_columns_afterimage_mask(), nullfields_mask);
+				_new_rows.push_back(_row);
+			}
+		}
+		else
+		{
 			_new_rows.push_back(_row);
 		}
 	}
