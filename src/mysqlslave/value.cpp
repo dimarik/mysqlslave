@@ -12,6 +12,8 @@ int CValue::calc_metadata_size(CValue::EColumnType ftype)
 	int rc;
 	switch( ftype ) 
 	{
+	case MYSQL_TYPE_TIMESTAMP:
+	case MYSQL_TYPE_TIMESTAMP2:
 	case MYSQL_TYPE_FLOAT:
 	case MYSQL_TYPE_DOUBLE:
 	case MYSQL_TYPE_BLOB:
