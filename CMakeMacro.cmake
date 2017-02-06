@@ -27,6 +27,8 @@ IF (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   SET (CMAKE_BUILD_TYPE RELEASE CACHE STRING "Build type" FORCE)
 ENDIF (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 
+SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE}")
+
 ###############################################################################
 
 # Enable printf format macros from <inttypes.h> in C++ code.

@@ -94,16 +94,6 @@ int CTable::update_row(CRow& row, const uint8_t** pdata, size_t* len, uint64_t n
 	const uint8_t* data = *pdata;
 	pmetadata = _metadata;
 	
-/*VDEBUG_CHUNK(	
-	{
-	char buf[64];
-	sprintf(buf, "row_%d.row", (int)::time(NULL));
-	std::ofstream f(buf, std::ofstream::binary);
-	f.write((char*)*pdata, *len);
-	f.flush();
-	f.close();
-	}
-)*/
 	bit = 0x01;
 	for (uint64_t i = 0; i < ncolumns; ++i)
 	{

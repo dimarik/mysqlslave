@@ -114,6 +114,7 @@ int CValue::calc_field_size(CValue::EColumnType ftype, const uint8_t *pfield, ui
 		break;
 	case MYSQL_TYPE_DATETIME:
 	case MYSQL_TYPE_DATETIME2:
+		abort();
 		length = 8;
 		break;
 	case MYSQL_TYPE_BIT:
@@ -625,9 +626,16 @@ bool CValue::as_boolean() const
 	return as_uint8() != 0;
 }
 
+#define mi_uint4korr(A) ((uint32) (((uint32) (((const uchar*) (A))[3])) +\
+                                   (((uint32) (((const uchar*) (A))[2])) << 8) +\
+                                   (((uint32) (((const uchar*) (A))[1])) << 16) +\
+                                   (((uint32) (((const uchar*) (A))[0])) << 24)))
+
+
 time_t CValue::as_timestamp() const 
 {
-	return _is_null || !is_valid() || _size != 4 ? 0 : (time_t)uint4korr(_storage);
+printf("%02X %02X %02X %02X\n", _storage[0], _storage[1], _storage[2], _storage[3]);
+	return _is_null || !is_valid() || _size != 4 ? 0 : (time_t)mi_uint4korr(_storage);
 }
 
 CValue::TDate CValue::as_date() const

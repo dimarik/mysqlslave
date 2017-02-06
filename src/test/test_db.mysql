@@ -4,6 +4,7 @@ USE test_mysqlslave_db;
 
 CREATE TABLE `test_table` (
 	`id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+	`added` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`number` int(11),
 	`string` VARCHAR(255),
 	`amount` DECIMAL (16,8) DEFAULT 0.0,
