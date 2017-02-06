@@ -634,7 +634,6 @@ bool CValue::as_boolean() const
 
 time_t CValue::as_timestamp() const 
 {
-printf("%02X %02X %02X %02X\n", _storage[0], _storage[1], _storage[2], _storage[3]);
 	return _is_null || !is_valid() || _size != 4 ? 0 : (time_t)mi_uint4korr(_storage);
 }
 
