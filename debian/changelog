@@ -1,3 +1,9 @@
+libmysqlslave-dev (0.1.2) stable; urgency=low
+
+  * TIMESTAMP2 on MariaDB 10.1
+
+ -- Alexander Pankov <pianist@usrsrc.ru>  Fri, 6 Feb 2017 04:00:00 +0400
+
 libmysqlslave-dev (0.1.1) stable; urgency=low
 
   * crash bugfix
