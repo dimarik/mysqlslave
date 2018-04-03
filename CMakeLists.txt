@@ -30,7 +30,7 @@ TARGET_LINK_LIBRARIES(mysqlslave ${LIB_mysqlclient} z ssl crypto dl)
 AUX_SOURCE_DIRECTORY(src/test SRC_MYSQLSLAVE_TEST)
 ADD_EXECUTABLE(test_mysqlslave ${SRC_MYSQLSLAVE_TEST})
 TARGET_LINK_LIBRARIES(test_mysqlslave mysqlslave pthread)
-INSTALL(TARGETS mysqlslave DESTINATION ${LIBDIR})
+INSTALL(TARGETS mysqlslave DESTINATION lib)
 INSTALL(DIRECTORY include/mysqlslave/ DESTINATION include/mysqlslave FILES_MATCHING PATTERN "*.h")
 INSTALL(DIRECTORY include/mysqlslave/ DESTINATION include/mysqlslave FILES_MATCHING PATTERN "*.hpp")
 
