@@ -1,3 +1,10 @@
+libmysqlslave-dev (0.1.2ubuntu1) stable; urgency=low
+
+  * check CRC32 of binlog events
+  * fix TABLE_MAP event handling
+
+ -- Alexander Golenev <alex.golenev@gmail.com>  Wed, 03 Apr 2019 15:26:00 +0300
+
 libmysqlslave-dev (0.1.2) stable; urgency=low
 
   * TIMESTAMP2 on MariaDB 10.1

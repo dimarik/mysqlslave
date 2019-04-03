@@ -1,4 +1,6 @@
 #include <mysqlslave/logevent.hpp>
+#include <string.h>
+#include "zlib.h"
 
 namespace mysql {
 
@@ -26,7 +28,8 @@ int CLogEvent::tune(uint8_t* data, size_t size, const CFormatDescriptionLogEvent
 	_data_written = uint4korr(data + EVENT_LEN_OFFSET);
 	_log_pos= uint4korr(data + LOG_POS_OFFSET);
 	_flags = uint2korr(data + FLAGS_OFFSET);
-	
+    _checksum = fmt._use_checksum && !(_flags & LOG_EVENT_ARTIFICIAL_F) ? uint4korr(data + size - 4) : 0;
+
 	return 0;
 }
 
@@ -42,13 +45,15 @@ CFormatDescriptionLogEvent::CFormatDescriptionLogEvent()
 	memset(_post_header_len, 0x00, LOG_EVENT_TYPES);
 }
 
-int CFormatDescriptionLogEvent::tune(uint8_t binlog_ver, const char* server_ver)
+int CFormatDescriptionLogEvent::tune(uint8_t binlog_ver, const char* server_ver, bool use_checksum)
 {
 	_binlog_version = binlog_ver;
 	
 	if (_binlog_version == 4 && server_ver != NULL)
 	{
-		memcpy(_server_version, server_ver, ST_SERVER_VER_LEN);
+        strncpy(_server_version, server_ver, ST_SERVER_VER_LEN);
+
+        _use_checksum = use_checksum;
 			
 		_common_header_len = LOG_EVENT_HEADER_LEN;
 		_post_header_len[START_EVENT_V3 - 1]= START_V3_HEADER_LEN;
@@ -105,6 +110,7 @@ int CRotateLogEvent::tune(uint8_t* data, size_t size, const CFormatDescriptionLo
 	{
 		data += fmt._common_header_len;
 		size -= fmt._common_header_len;
+        if (fmt._use_checksum) size -= 4;
 		
 		_position = uint8korr(data);
 		_new_log = data + 8;
@@ -150,6 +156,7 @@ int CQueryLogEvent::tune(uint8_t* data, size_t size, const CFormatDescriptionLog
 		post_header_len = fmt._post_header_len[QUERY_EVENT - 1];
 
 		data_len = size - (common_header_len + post_header_len);
+        if (fmt._use_checksum) data_len -= 4;
 		data += common_header_len;
 
 		_q_exec_time = uint4korr(data + Q_EXEC_TIME_OFFSET);
@@ -235,7 +242,7 @@ int CTableMapLogEvent::get_column_count() const
 /* Taken from original MySQL sources, some versions of libmysqlclient does not export this function. */
 static ulong __net_field_length(uchar **packet)
 {
-	reg1 uchar *pos= (uchar *)*packet;
+    uchar *pos= (uchar *)*packet;
 	if (*pos < 251)
 	{
 		(*packet)++;
@@ -265,6 +272,7 @@ int CTableMapLogEvent::tune(uint8_t* data, size_t size, const CFormatDescription
 	CLogEvent::tune(data, size, fmt);
 	if( _data ) delete [] _data;
 	_size = size;
+    if (fmt._use_checksum) _size -= 4;
 	_data = new uint8_t[_size];
 	memcpy(_data, data, _size);
 
@@ -308,6 +316,7 @@ int CRowLogEvent::tune(uint8_t* data, size_t size, const CFormatDescriptionLogEv
 	_type = data[EVENT_TYPE_OFFSET];
 	data += fmt._common_header_len;
 	size -= fmt._common_header_len;
+    if (fmt._use_checksum) size -= 4;
 	p = data;
 	
 	p += RW_MAPID_OFFSET;

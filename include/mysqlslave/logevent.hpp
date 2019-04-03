@@ -8,20 +8,10 @@
 #endif
 
 // copy-paste from mysql sources.
-
-#include <my_config.h>
 #include <my_global.h>
 #include <mysql.h>
-#include <m_ctype.h>
-#include <my_sys.h>
-#include <my_dir.h>
-#include <sql_common.h>
+
 #undef HAVE_STPCPY
-#include <m_string.h>
-#include <mysqld_error.h>
-#include <my_attribute.h>
-#include <my_dbug.h>
-#include <decimal.h>
 #undef max
 #undef min
 #include <stdio.h>
@@ -119,6 +109,8 @@
 /* 4 bytes which all binlogs should begin with */
 #define BINLOG_MAGIC        "\xfe\x62\x69\x6e"
 
+/* Artificial events are created arbitarily and not written to binary log */
+#define LOG_EVENT_ARTIFICIAL_F 0x20
 
 namespace mysql {
 
@@ -165,6 +157,30 @@ enum Log_event_type
 	// Something out of the ordinary happened on the master
 	INCIDENT_EVENT = 26,
 
+    /*
+    HEARTBEAT_EVENT = 27,
+
+    IGNORABLE_EVENT = 28,
+    ROWS_QUERY_EVENT = 29,
+
+    // Version 2 of the Row events
+    WRITE_ROWS_V2_EVENT = 30,
+    UPDATE_ROWS_V2_EVENT = 31,
+    DELETE_ROWS_V2_EVENT = 32,
+
+    GTID_EVENT = 33,
+    ANONYMOUS_GTID_EVENT = 34,
+
+    PREVIOUS_GTIDS_EVENT = 35,
+
+    TRANSACTION_CONTEXT_EVENT = 36,
+
+    VIEW_CHANGE_EVENT = 37,
+
+    // Prepared XA transaction terminal event similar to Xid
+    XA_PREPARE_EVENT = 38,
+    */
+
 	/*
 	Add new events here - right above this comment!
 	Existing events (except ENUM_END_EVENT) should never change their numbers
@@ -201,6 +217,7 @@ public:
 	uint32_t _data_written;
 	uint64_t _log_pos;
 	uint16_t _flags;
+        uint32_t _checksum;
 
 VDEBUG_CHUNK (
 public:
@@ -236,13 +253,14 @@ public:
 	
 	bool is_supported(uint32_t event_type) { return event_type <= LOG_EVENT_TYPES; }
 	
-	int tune(uint8_t binlog_ver, const char* server_ver);
+        int tune(uint8_t binlog_ver, const char* server_ver, bool use_checksum);
 	
 public:
 	uint8_t _binlog_version;
 	char _server_version[ST_SERVER_VER_LEN];
 	uint8_t _common_header_len;
 	uint8_t _post_header_len[LOG_EVENT_TYPES];
+        bool _use_checksum;
 };
 
 /*

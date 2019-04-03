@@ -10,12 +10,14 @@
 #include "database.hpp"
 #include "exceptions.hpp"
 #include <map>
+#include <unordered_map>
 
 namespace mysql {
 
 class CLogParser 
 {
 	std::map<uint64_t, CTable*> _id_2_table;
+    std::unordered_map<std::string, uint64_t> _table_2_id;
 public:
 	typedef std::map<std::string, CDatabase, CCaseIgnorer> TDatabases;
 
@@ -49,6 +51,7 @@ protected:
 	void reconnect();
 	void disconnect();
 	void get_binlog_format();
+        void setup_master_binlog_checksum();
 	void build_db_structure();
 	void get_last_binlog_position();
 

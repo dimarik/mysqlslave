@@ -105,6 +105,11 @@ public:
 	
 	int update(CRowLogEvent& rlev);
 
+    void set_tuned(bool tuned)
+    {
+        _tuned = tuned;
+    }
+
 protected:
 	int update_row(CRow& row, const uint8_t** pdata, size_t* len, uint64_t ncolumns, uint64_t usedcolumns_mask, uint64_t nullfields_mask);
 

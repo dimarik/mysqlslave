@@ -1,5 +1,6 @@
 #include <mysqlslave/logparser.h>
 #include <sql_common.h>
+#include <errmsg.h>
 
 #if MYSQL_VERSION_ID > 50541 && defined(MARIADB_BASE_VERSION)
 /* MariaDB-5.5.42 or later, with low-level mysql_net_ API */
@@ -79,12 +80,13 @@ void CLogParser::get_binlog_format()
 {
 	MYSQL_RES* res = 0;
 	MYSQL_ROW row;
-	const char* version;
+    char* version = 0;
+    bool use_checksum = false;
 
 	if (mysql_query(&_mysql, "SELECT VERSION()") || 
 		!( res = mysql_store_result(&_mysql) ) ||
 		!( row = mysql_fetch_row(res) ) || 
-		!( version = row[0] )
+        !row[0]
 	)
 	{
 		if (res)
@@ -94,21 +96,48 @@ void CLogParser::get_binlog_format()
 		throw CException("could not get server version: '%s'", mysql_error(&_mysql));
 	}
 
-	if (*version != '5' && strncmp(version, "10.0", 4) && strncmp(version, "10.1", 4))
+    version = strdup(row[0]);
+    mysql_free_result(res);
+    res = 0;
+
+    if (mysql_query(&_mysql, "SHOW GLOBAL VARIABLES LIKE 'BINLOG_CHECKSUM'") ||
+            !(res = mysql_store_result(&_mysql)))
+    {
+        free(version);
+        throw CException("could not get 'BINLOG_CHECKSUM' global variable: '%s'", mysql_error(&_mysql));
+    }
+
+    if ((row = mysql_fetch_row(res)) && row[1])
+    {
+        use_checksum = strcmp(row[1], "NONE") != 0;
+    }
+    mysql_free_result(res);
+    res = 0;
+
+    if (*version != '5' && strncmp(version, "10.0", 4) && strncmp(version, "10.1", 4) && strncmp(version, "10.3", 4))
 	{
-		if (res)
-		{
-			mysql_free_result(res);
-		}
+        free(version);
 		throw CException("invalid server version '%s', should be 5.5, 5.6, 10.0", version);
 	}
 	
-	if (_fmt.tune(4, version) != 0)
+    if (_fmt.tune(4, version, use_checksum) != 0)
 	{
+        free(version);
 		throw std::runtime_error("cannot tune format log description");
 	}
+
+    free(version);
 }
 
+void CLogParser::setup_master_binlog_checksum()
+{
+    if (!_fmt._use_checksum) return;
+
+    if (mysql_query(&_mysql, "SET @master_binlog_checksum= @@global.binlog_checksum"))
+    {
+        throw CException("Can not setup master_binlog_checksum: '%s'", mysql_error(&_mysql));
+    }
+}
 
 void CLogParser::request_binlog_dump()
 {
@@ -134,6 +163,7 @@ void CLogParser::prepare()
 {
 	connect();
 	get_binlog_format();
+    setup_master_binlog_checksum();
 	build_db_structure();
 	request_binlog_dump();
 }
@@ -149,12 +179,13 @@ void CLogParser::dispatch_events()
 	uint32_t event_type;
 	uint8_t* buf;
 	TDatabases::iterator it_dbs;
+    my_bool is_data_packet;
 	
 	do
 	{
 		while (_dispatch && !_is_connected) { reconnect(); sleep(1); }
 		
-		len = mysql_net_read_packet(&_mysql);
+        len = cli_safe_read(&_mysql, &is_data_packet);
 		
 		if (!_dispatch) return;
 		
@@ -226,7 +257,14 @@ void CLogParser::dispatch_events()
 				tbl = it_dbs->second.get_table(_tbl_name);
 				if (tbl)
 				{
-					_id_2_table[tbl->get_table_id(buf, len, _fmt)] = tbl;
+                    uint64_t table_id = tbl->get_table_id(buf, len, _fmt);
+                    auto it_prev_id = _table_2_id.find(_tbl_name);
+                    if (it_prev_id != _table_2_id.end() && it_prev_id->second != table_id)
+                    {
+                        tbl->set_tuned(false);
+                    }
+                    _id_2_table[table_id] = tbl;
+                    _table_2_id[_tbl_name] = table_id;
 				}
 				//printf("MAP %s to %lu\n", CTableMapLogEvent::get_table_name(buf, len, _fmt), tbl->get_table_id(buf, len, _fmt));
 			}
@@ -317,6 +355,16 @@ void CLogParser::dispatch_events()
 		}
 		}
 		
+        if (_fmt._use_checksum && !(uint2korr(buf + FLAGS_OFFSET) & LOG_EVENT_ARTIFICIAL_F))
+        {
+            unsigned long received_checksum = uint4korr(buf + (len - 4));
+            unsigned long checksum = crc32(crc32(0L, NULL, 0), buf, len - 4);
+            if (received_checksum != checksum)
+            {
+                throw CException("CRC32 binlog checksums don't match. Received: %lu. Calculated: %lu",
+                                 received_checksum, checksum);
+            }
+        }
 	}
 	while (dispatch());
 

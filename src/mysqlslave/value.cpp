@@ -603,13 +603,15 @@ double CValue::as_double() const
 	}
 	else
 	{
+        float tmp;
 		if (_size == 4)
 		{
-			float4get(db, _storage);
+            float4get(&tmp, _storage);
+            db = tmp;
 		}
 		else if (_size == 8)
 		{
-			float8get(db, _storage);
+            float8get(&db, _storage);
 		}
 	}
 	
