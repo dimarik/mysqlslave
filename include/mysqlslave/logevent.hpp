@@ -157,7 +157,6 @@ enum Log_event_type
 	// Something out of the ordinary happened on the master
 	INCIDENT_EVENT = 26,
 
-    /*
     HEARTBEAT_EVENT = 27,
 
     IGNORABLE_EVENT = 28,
@@ -179,7 +178,6 @@ enum Log_event_type
 
     // Prepared XA transaction terminal event similar to Xid
     XA_PREPARE_EVENT = 38,
-    */
 
 	/*
 	Add new events here - right above this comment!
@@ -512,6 +510,9 @@ public:
 	uint16_t _row_flags;
 	uint64_t _table_id;
 	uint64_t _ncolumns;
+
+        uint16_t _extra_data_len;
+        const uint8_t *_extra_data;
 	
 	const uint8_t *_rows;
 protected:
@@ -537,7 +538,7 @@ public:
 				(int)_ncolumns, 
 				(int)used_columns_mask(),
 				(int)used_columns_1bit_count());
-		if( _type == UPDATE_ROWS_EVENT )
+               if( _type == UPDATE_ROWS_EVENT || _type == UPDATE_ROWS_V2_EVENT)
 			fprintf(stream, ", ucam %X (%d bits)", 
 				(int)used_columns_afterimage_mask(),
 				(int)used_columns_afterimage_1bit_count());

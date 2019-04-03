@@ -82,6 +82,19 @@ int CFormatDescriptionLogEvent::tune(uint8_t binlog_ver, const char* server_ver,
 		_post_header_len[UPDATE_ROWS_EVENT - 1]=  ROWS_HEADER_LEN;
 		_post_header_len[DELETE_ROWS_EVENT - 1]=  ROWS_HEADER_LEN;
 		_post_header_len[INCIDENT_EVENT - 1]= INCIDENT_HEADER_LEN;
+               //_post_header_len[HEARTBEAT_EVENT - 1] = 0;
+               //_post_header_len[IGNORABLE_EVENT - 1] = 0;
+               //_post_header_len[ROWS_QUERY_EVENT - 1] = 0;
+               _post_header_len[WRITE_ROWS_V2_EVENT - 1] = ROWS_HEADER_LEN;
+               _post_header_len[UPDATE_ROWS_V2_EVENT - 1] = ROWS_HEADER_LEN;
+               _post_header_len[DELETE_ROWS_V2_EVENT - 1] = ROWS_HEADER_LEN;
+               //_post_header_len[GTID_EVENT - 1] = 0;
+               //_post_header_len[ANONYMOUS_GTID_EVENT - 1] = 0;
+               //_post_header_len[PREVIOUS_GTIDS_EVENT - 1] = 0;
+               //_post_header_len[TRANSACTION_CONTEXT_EVENT - 1] = 0;
+               //_post_header_len[VIEW_CHANGE_EVENT - 1] = 0;
+               //_post_header_len[XA_PREPARE_EVENT - 1]= 0;
+
 	}
 	else 
 	{
@@ -324,15 +337,32 @@ int CRowLogEvent::tune(uint8_t* data, size_t size, const CFormatDescriptionLogEv
 	
 	p += RW_FLAGS_OFFSET;
 	_row_flags= uint2korr(p);
-	
-	p+=2;
+
+       p+=2;
+       /* Extra not used */
+       if (_type == WRITE_ROWS_V2_EVENT ||
+               _type == UPDATE_ROWS_V2_EVENT ||
+               _type == DELETE_ROWS_V2_EVENT)
+       {
+           _extra_data_len = uint2korr(p);
+           _extra_data_len -= 2;
+           p += 2;
+           _extra_data = p;
+           p += _extra_data_len;
+       }
+       else
+       {
+           _extra_data_len = 0;
+           _extra_data = 0;
+       }
+
 	_ncolumns = __net_field_length((u_char**)&p);
 	
 	_used_columns_mask = build_column_mask(&p, NULL, _ncolumns);
 	if( _used_columns_mask == (uint64_t) - 1 ) return -1;
 	update_n1bits(&_used_columns_mask);
 	
-	if( _type == UPDATE_ROWS_EVENT )
+       if( _type == UPDATE_ROWS_EVENT || _type == UPDATE_ROWS_V2_EVENT)
 	{
 		_used_columns_afterimage_mask = build_column_mask(&p, NULL, _ncolumns);
 		if( _used_columns_afterimage_mask == (uint64_t) - 1 ) return -1;

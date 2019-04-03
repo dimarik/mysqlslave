@@ -285,6 +285,7 @@ void CLogParser::dispatch_events()
 			break;
 		}
 		case WRITE_ROWS_EVENT:
+               case WRITE_ROWS_V2_EVENT:
 		{
 			if (event_row.tune(buf, len, _fmt) == 0 )
 			{
@@ -304,6 +305,7 @@ void CLogParser::dispatch_events()
 			break;
 		}
 		case UPDATE_ROWS_EVENT:
+               case UPDATE_ROWS_V2_EVENT:
 		{
 			if (event_row.tune(buf, len, _fmt) == 0 )
 			{
@@ -323,6 +325,7 @@ void CLogParser::dispatch_events()
 			break;
 		}	
 		case DELETE_ROWS_EVENT:
+               case DELETE_ROWS_V2_EVENT:
 		{
 			if (event_row.tune(buf, len, _fmt) == 0 )
 			{
