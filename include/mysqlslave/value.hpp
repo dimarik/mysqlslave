@@ -134,6 +134,9 @@ public:
 	TDate as_date() const;
 	TTime as_time() const;
 	TYear as_year() const;
+
+    //decimal
+    std::string as_decimal_string(int m, int d, char filler) const;
 	
 	// etc
 	std::string as_string() const;

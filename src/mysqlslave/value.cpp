@@ -1,5 +1,9 @@
 #include <mysqlslave/value.hpp>
 
+extern "C" {
+#include <mysql/decimal.h>
+}
+
 namespace mysql
 {
 
@@ -397,6 +401,181 @@ typedef longlong dec2;
 #define DIG_MAX      (DIG_BASE-1)
 #define DIG_BASE2    ((dec2)DIG_BASE * (dec2)DIG_BASE)
 
+static int _init_decimal(decimal_t& decimal, dec1* to_buf, size_t to_buf_len, int precision, int scale, const uint8_t* storage)
+{
+    const uint8_t *from = storage;
+    int error = E_DEC_OK, intg=precision-scale,
+        intg0=intg/DIG_PER_DEC1, frac0=scale/DIG_PER_DEC1,
+        intg0x=intg-intg0*DIG_PER_DEC1, frac0x=scale-frac0*DIG_PER_DEC1,
+        intg1=intg0+(intg0x>0), frac1=frac0+(frac0x>0),
+        mask=(*from & 0x80) ? 0 : -1,
+        to_sign, to_intg, to_frac;
+
+    static const int dig2bytes[DIG_PER_DEC1+1]={0, 1, 1, 2, 2, 3, 3, 4, 4, 4};
+    static const dec1 powers10[DIG_PER_DEC1+1]={ 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
+
+    dec1* buf = to_buf;
+    FIX_INTG_FRAC_ERROR(512, intg1, frac1, error);
+    if (unlikely(error))
+    {
+        if (intg1 < intg0+(intg0x>0))
+        {
+            from+=dig2bytes[intg0x]+sizeof(dec1)*(intg0-intg1);
+            frac0=frac0x=intg0x=0;
+            intg0=intg1;
+        }
+        else
+        {
+            frac0x=0;
+            frac0=frac1;
+        }
+    }
+
+    to_sign=(mask != 0);
+    to_intg=intg0*DIG_PER_DEC1+intg0x;
+    to_frac=frac0*DIG_PER_DEC1+frac0x;
+
+    if (0 != intg0x)
+    {
+        dec1 x;
+        int i=dig2bytes[intg0x];
+
+        if (storage == from)
+        {
+            uint8_t tmp[4];
+            memcpy(tmp, from, 4);
+            tmp[0] ^= 0x80;
+            switch (i)
+            {
+                case 1: x=mi_sint1korr(tmp); break;
+                case 2: x=mi_sint2korr(tmp); break;
+                case 3: x=mi_sint3korr(tmp); break;
+                case 4: x=mi_sint4korr(tmp); break;
+                default: {assert(0); return E_DEC_ERROR;};
+            }
+        }
+        else
+        {
+            switch (i)
+            {
+                case 1: x=mi_sint1korr(from); break;
+                case 2: x=mi_sint2korr(from); break;
+                case 3: x=mi_sint3korr(from); break;
+                case 4: x=mi_sint4korr(from); break;
+                default: {assert(0); return E_DEC_ERROR;};
+            }
+        }
+
+        from+=i;
+        *buf=x ^ mask;
+        if (((ulonglong)*buf) >= (ulonglong) powers10[intg0x+1])
+        {
+            assert(0);
+            return E_DEC_ERROR;
+        }
+
+        if (buf > to_buf || *buf != 0)
+            buf++;
+        else
+            to_intg-=intg0x;
+    }
+
+    for (const uint8_t* stop=from+intg0*sizeof(dec1); from < stop; from+=sizeof(dec1))
+    {
+        if (storage == from)
+        {
+            uint8_t tmp[4];
+            memcpy(tmp, from, 4);
+            tmp[0] ^= 0x80;
+            *buf=mi_sint4korr(tmp) ^ mask;
+        }
+        else
+            *buf=mi_sint4korr(from) ^ mask;
+
+        if (((uint32)*buf) > DIG_MAX)
+        {
+            assert(0);
+            return E_DEC_ERROR;
+        }
+
+        if (buf > to_buf || *buf != 0)
+            buf++;
+        else
+            to_intg-=DIG_PER_DEC1;
+    }
+
+    assert(to_intg >= 0);
+
+    for (const uint8_t* stop=from+frac0*sizeof(dec1); from < stop; from+=sizeof(dec1))
+    {
+        if (storage == from)
+        {
+            uint8_t tmp[4];
+            memcpy(tmp, from, 4);
+            tmp[0] ^= 0x80;
+            *buf=mi_sint4korr(tmp) ^ mask;
+        }
+        else
+            *buf=mi_sint4korr(from) ^ mask;
+
+        if (((uint32)*buf) > DIG_MAX)
+        {
+            assert(0);
+            return E_DEC_ERROR;
+
+        }
+        buf++;
+    }
+
+    if (0 != frac0x)
+    {
+        int i=dig2bytes[frac0x];
+        dec1 x;
+        if (storage == from)
+        {
+            uint8_t tmp[4];
+            memcpy(tmp, from, 4);
+            tmp[0] ^= 0x80;
+            switch (i)
+            {
+                case 1: x=mi_sint1korr(tmp); break;
+                case 2: x=mi_sint2korr(tmp); break;
+                case 3: x=mi_sint3korr(tmp); break;
+                case 4: x=mi_sint4korr(tmp); break;
+                default: {assert(0); return E_DEC_ERROR;};
+            }
+        }
+        else
+        {
+            switch (i)
+            {
+                case 1: x=mi_sint1korr(from); break;
+                case 2: x=mi_sint2korr(from); break;
+                case 3: x=mi_sint3korr(from); break;
+                case 4: x=mi_sint4korr(from); break;
+                default: {assert(0); return E_DEC_ERROR;};
+            }
+        }
+
+        *buf=(x ^ mask) * powers10[DIG_PER_DEC1 - frac0x];
+        if (((uint32)*buf) > DIG_MAX)
+        {
+            assert(0);
+            return E_DEC_ERROR;
+        }
+
+        buf++;
+    }
+
+    decimal.sign = to_sign;
+    decimal.intg = to_intg;
+    decimal.frac = to_frac;
+    decimal.buf = to_buf;
+    decimal.len = to_buf_len;
+
+    return E_DEC_OK;
+}
+
 double CValue::as_double() const
 {
 	double db = 0;
@@ -409,197 +588,11 @@ double CValue::as_double() const
 		int precision = (int)(_metadata & 0xff);
 		int scale = (int)(_metadata >> 8);
 		const uint8_t* from = _storage;
-
-		int error = E_DEC_OK, intg=precision-scale,
-			intg0=intg/DIG_PER_DEC1, frac0=scale/DIG_PER_DEC1,
-			intg0x=intg-intg0*DIG_PER_DEC1, frac0x=scale-frac0*DIG_PER_DEC1,
-			intg1=intg0+(intg0x>0), frac1=frac0+(frac0x>0),
-			mask=(*from & 0x80) ? 0 : -1,
-			to_sign, to_intg, to_frac;
-
-		static const int dig2bytes[DIG_PER_DEC1+1]={0, 1, 1, 2, 2, 3, 3, 4, 4, 4};
-		static const dec1 powers10[DIG_PER_DEC1+1]={ 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
-		static double scaler10[]= { 1.0, 1e10, 1e20, 1e30, 1e40, 1e50, 1e60, 1e70, 1e80, 1e90 };
-		static double scaler1[]= { 1.0, 10.0, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9 };
-		
-		dec1 to_buf[512];
-		dec1* buf = to_buf;
-		FIX_INTG_FRAC_ERROR(512, intg1, frac1, error);
-		if (unlikely(error))
-		{
-			if (intg1 < intg0+(intg0x>0))
-			{
-				from+=dig2bytes[intg0x]+sizeof(dec1)*(intg0-intg1);
-				frac0=frac0x=intg0x=0;
-				intg0=intg1;
-			}
-			else
-			{
-				frac0x=0;
-				frac0=frac1;
-			}
-		}
-
-		to_sign=(mask != 0);
-		to_intg=intg0*DIG_PER_DEC1+intg0x;
-		to_frac=frac0*DIG_PER_DEC1+frac0x;
-
-		if (0 != intg0x)
-		{
-			dec1 x;
-			int i=dig2bytes[intg0x];
-
-			if (_storage == from)
-			{
-				uint8_t tmp[4];
-				memcpy(tmp, from, 4);
-				tmp[0] ^= 0x80;
-				switch (i)
-				{
-					case 1: x=mi_sint1korr(tmp); break;
-					case 2: x=mi_sint2korr(tmp); break;
-					case 3: x=mi_sint3korr(tmp); break;
-					case 4: x=mi_sint4korr(tmp); break;
-					default: {assert(0); return std::numeric_limits<double>::max();};
-				}
-			}
-			else
-			{
-				switch (i)
-				{
-					case 1: x=mi_sint1korr(from); break;
-					case 2: x=mi_sint2korr(from); break;
-					case 3: x=mi_sint3korr(from); break;
-					case 4: x=mi_sint4korr(from); break;
-					default: {assert(0); return std::numeric_limits<double>::max();};
-				}
-			}
-			
-			from+=i;
-			*buf=x ^ mask;
-			if (((ulonglong)*buf) >= (ulonglong) powers10[intg0x+1])
-			{
-				assert(0);
-				return std::numeric_limits<double>::max();
-			}
-			
-			if (buf > to_buf || *buf != 0)
-				buf++;
-			else
-				to_intg-=intg0x;
-		}
-
-		for (const uint8_t* stop=from+intg0*sizeof(dec1); from < stop; from+=sizeof(dec1))
-		{
-			if (_storage == from)
-			{
-				uint8_t tmp[4];
-				memcpy(tmp, from, 4);
-				tmp[0] ^= 0x80;
-				*buf=mi_sint4korr(tmp) ^ mask;
-			}
-			else
-				*buf=mi_sint4korr(from) ^ mask;
-			
-			if (((uint32)*buf) > DIG_MAX)
-			{
-				assert(0);
-				return std::numeric_limits<double>::max();
-			}
-				
-			if (buf > to_buf || *buf != 0)
-				buf++;
-			else
-				to_intg-=DIG_PER_DEC1;
-		}
-
-		assert(to_intg >= 0);
-
-		for (const uint8_t* stop=from+frac0*sizeof(dec1); from < stop; from+=sizeof(dec1))
-		{
-			if (_storage == from)
-			{
-				uint8_t tmp[4];
-				memcpy(tmp, from, 4);
-				tmp[0] ^= 0x80;
-				*buf=mi_sint4korr(tmp) ^ mask;
-			}
-			else
-				*buf=mi_sint4korr(from) ^ mask;
-			
-			if (((uint32)*buf) > DIG_MAX)
-			{
-				assert(0);
-				return std::numeric_limits<double>::max();
-				
-			}
-			buf++;
-		}
-
-		if (0 != frac0x)
-		{
-			int i=dig2bytes[frac0x];
-			dec1 x;
-			if (_storage == from)
-			{
-				uint8_t tmp[4];
-				memcpy(tmp, from, 4);
-				tmp[0] ^= 0x80;
-				switch (i)
-				{
-					case 1: x=mi_sint1korr(tmp); break;
-					case 2: x=mi_sint2korr(tmp); break;
-					case 3: x=mi_sint3korr(tmp); break;
-					case 4: x=mi_sint4korr(tmp); break;
-					default: {assert(0); return std::numeric_limits<double>::max();};
-				}
-			}
-			else
-			{
-				switch (i)
-				{
-					case 1: x=mi_sint1korr(from); break;
-					case 2: x=mi_sint2korr(from); break;
-					case 3: x=mi_sint3korr(from); break;
-					case 4: x=mi_sint4korr(from); break;
-					default: {assert(0); return std::numeric_limits<double>::max();};
-				}
-			}
-			
-			*buf=(x ^ mask) * powers10[DIG_PER_DEC1 - frac0x];
-			if (((uint32)*buf) > DIG_MAX)
-			{
-				assert(0);
-				return std::numeric_limits<double>::max();
-			}
-			
-			buf++;
-		}
-
-
-		to_sign = to_sign;
-		to_intg = to_intg;
-		to_frac = to_frac;
-
-		buf = to_buf;
-		
-		for (int i= to_intg; i > 0;  i-= DIG_PER_DEC1)
-		{
-			db= db * DIG_BASE + *buf++;
-		}
-
-		int exp=0;
-		
-		for (int i= to_frac; i > 0; i-= DIG_PER_DEC1)
-		{
-			db = db * DIG_BASE + *buf++;
-			exp+= DIG_PER_DEC1;
-		}
-
-		db /= scaler10[exp / 10] * scaler1[exp % 10];
-
-		if (0 != to_sign)
-			db = -db;
+        dec1 to_buf[512];
+        decimal_t decimal;
+        int ret = _init_decimal(decimal, to_buf, sizeof(to_buf), precision, scale, from);
+        if (ret != E_DEC_OK) return std::numeric_limits<double>::max();
+        decimal2double(&decimal, &db);
 	}
 	else
 	{
@@ -754,11 +747,28 @@ void CValue::as_string(std::string& dst) const
 
 std::string CValue::as_string() const
 {
-	std::string rc;
-	as_string(rc);
+	std::string rc;   
+    as_string(rc);
 	return rc;
 }
 
+std::string CValue::as_decimal_string(int m, int d, char filler) const
+{
+    if (_type == MYSQL_TYPE_NEWDECIMAL)
+    {
+        int precision = (int)(_metadata & 0xff);
+        int scale = (int)(_metadata >> 8);
+        const uint8_t* from = _storage;
+        dec1 to_buf[512];
+        decimal_t decimal;
+        int ret = _init_decimal(decimal, to_buf, sizeof(to_buf), precision, scale, from);
+        if (ret != E_DEC_OK) return "";
+        int str_size = decimal_string_size(&decimal);
+        char str_buf[str_size];
+        decimal2string(&decimal, str_buf, &str_size, m+2, d, filler);
+    }
+    return "";
+}
 
 const uint8_t* CValue::as_blob(size_t* length) const
 {
