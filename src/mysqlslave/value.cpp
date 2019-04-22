@@ -747,13 +747,7 @@ void CValue::as_string(std::string& dst) const
 
 std::string CValue::as_string() const
 {
-	std::string rc;   
-    as_string(rc);
-	return rc;
-}
 
-std::string CValue::as_decimal_string(int m, int d, char filler) const
-{
     if (_type == MYSQL_TYPE_NEWDECIMAL)
     {
         int precision = (int)(_metadata & 0xff);
@@ -765,10 +759,15 @@ std::string CValue::as_decimal_string(int m, int d, char filler) const
         if (ret != E_DEC_OK) return "";
         int str_size = decimal_string_size(&decimal);
         char str_buf[str_size];
-        decimal2string(&decimal, str_buf, &str_size, m+2, d, filler);
+        decimal2string(&decimal, str_buf, &str_size, precision-scale+2, scale, '0');
         return std::string(str_buf);
     }
-    return "";
+    else
+    {
+        std::string rc;
+        as_string(rc);
+        return rc;
+    }
 }
 
 const uint8_t* CValue::as_blob(size_t* length) const
