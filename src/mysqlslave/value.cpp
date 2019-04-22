@@ -759,7 +759,7 @@ std::string CValue::as_string() const
         if (ret != E_DEC_OK) return "";
         int str_size = decimal_string_size(&decimal);
         char str_buf[str_size];
-        decimal2string(&decimal, str_buf, &str_size, precision-scale+2, scale, '0');
+        decimal2string(&decimal, str_buf, &str_size, precision+2, scale, '0');
         return std::string(str_buf);
     }
     else
