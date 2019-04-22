@@ -766,6 +766,7 @@ std::string CValue::as_decimal_string(int m, int d, char filler) const
         int str_size = decimal_string_size(&decimal);
         char str_buf[str_size];
         decimal2string(&decimal, str_buf, &str_size, m+2, d, filler);
+        return std::string(str_buf);
     }
     return "";
 }
