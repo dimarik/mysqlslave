@@ -1,0 +1,70 @@
+BuildRoot: @CMAKE_CURRENT_BINARY_DIR@/_CPack_Packages/Linux/RPM/@CPACK_PACKAGE_FILE_NAME@@CPACK_RPM_PACKAGE_COMPONENT_PART_PATH@
+Summary: mysql replication developement library
+Name: @CPACK_PACKAGE_NAME@
+Version: @CPACK_PACKAGE_VERSION@
+Release: @CPACK_PACKAGE_RELEASE@%{?dist}
+Vendor: @CPACK_PACKAGE_VENDOR@
+Prefix: @CPACK_PACKAGING_INSTALL_PREFIX@
+Group: Developement/Libraries
+License: GPL
+#BuildRequires:	cmake gcc-c++
+
+%define _rpmfilename @CPACK_PACKAGE_FILE_NAME@.rpm
+%define _unpackaged_files_terminate_build 0
+%define _topdir @CMAKE_CURRENT_BINARY_DIR@/_CPack_Packages/Linux/RPM
+%define _rpmdir %_topdir
+%define _rpmdir %_topdir/RPMS
+%define _srcrpmdir %_topdir/SRPMS
+
+%description
+mysql replication
+
+%prep
+mv $RPM_BUILD_ROOT %_topdir/tmpBBroot
+rm -rf "$RPM_BUILD_DIR/CMakeFiles"
+rm -f "$RPM_BUILD_DIR/CMakeCache.txt"
+
+%build
+
+%install
+if [ -e $RPM_BUILD_ROOT ];
+then
+  rm -Rf $RPM_BUILD_ROOT
+fi
+mv %_topdir/tmpBBroot $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT/usr/share
+
+%post
+@RPM_SYMLINK_POSTINSTALL@
+@CPACK_RPM_SPEC_POSTINSTALL@
+
+%postun
+@CPACK_RPM_SPEC_POSTUNINSTALL@
+
+%pre
+@CPACK_RPM_SPEC_PREINSTALL@
+
+%preun
+@CPACK_RPM_SPEC_PREUNINSTALL@
+
+%clean
+rm -rf %{buildroot}
+
+%files
+%defattr(-,root,root,-)
+@CPACK_PACKAGING_INSTALL_PREFIX@/@LIB_INSTALL_DIR@/libmysqlslave.a
+@CPACK_PACKAGING_INSTALL_PREFIX@/include/mysqlslave/columndesc.hpp
+@CPACK_PACKAGING_INSTALL_PREFIX@/include/mysqlslave/database.hpp
+@CPACK_PACKAGING_INSTALL_PREFIX@/include/mysqlslave/exceptions.hpp
+@CPACK_PACKAGING_INSTALL_PREFIX@/include/mysqlslave/logevent.hpp
+@CPACK_PACKAGING_INSTALL_PREFIX@/include/mysqlslave/logparser.h
+@CPACK_PACKAGING_INSTALL_PREFIX@/include/mysqlslave/value.hpp
+
+%changelog
+
+* Wed May 8 2019 Ruslan Osmanov <rrosmanov@gmail.com> - 0.1.2
+- Synced spec file with CMakeLists.txt
+
+* Sat Sep 26 2015 Alexander Pankov <pianisteg@gmail.com> - 0.1.1
+- MariaDB 5.5.x and 10.0.x on CentOS 7
+
