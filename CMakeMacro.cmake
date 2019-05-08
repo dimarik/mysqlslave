@@ -1,6 +1,6 @@
 SET (FLAGS_DEFAULT  "-fPIC -pipe")
 SET (FLAGS_WARNING  "-Wall -Werror -Wno-long-long -Wno-variadic-macros -Wno-strict-aliasing")# -Wextra -pedantic")
-SET (FLAGS_CXX_LANG "-Wno-deprecated")
+SET (FLAGS_CXX_LANG "-Wno-deprecated -Wno-format-overflow")
 SET (FLAGS_RELEASE  "-O3 -DNDEBUG") # -fomit-frame-pointer -funroll-loops
 SET (FLAGS_DEBUG    "-ggdb")
 
