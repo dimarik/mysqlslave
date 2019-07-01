@@ -219,6 +219,7 @@ void CLogParser::dispatch_events()
 
 		switch (event_type)
 		{
+
 		case ROTATE_EVENT:
 		{
 			if (event_rotate.tune(buf, len, _fmt) == 0)
@@ -266,7 +267,7 @@ void CLogParser::dispatch_events()
                     _id_2_table[table_id] = tbl;
                     _table_2_id[_tbl_name] = table_id;
 				}
-				//printf("MAP %s to %lu\n", CTableMapLogEvent::get_table_name(buf, len, _fmt), tbl->get_table_id(buf, len, _fmt));
+                //printf("MAP %s to %lu\n", CTableMapLogEvent::get_table_name(buf, len, _fmt), tbl->get_table_id(buf, len, _fmt));
 			}
 			else
 			{

@@ -159,7 +159,7 @@ int CQueryLogEvent::tune(uint8_t* data, size_t size, const CFormatDescriptionLog
 {
 	uint8_t common_header_len, post_header_len;
 	uint64_t data_len;
-	_query[0] = '\0';
+    _query = "";
 	
 	int rc = CLogEvent::tune(data,size,fmt);
 
@@ -175,6 +175,7 @@ int CQueryLogEvent::tune(uint8_t* data, size_t size, const CFormatDescriptionLog
 		_q_exec_time = uint4korr(data + Q_EXEC_TIME_OFFSET);
 
 		_db_len = (uint32_t)data[Q_DB_LEN_OFFSET];
+
 		_error_code = uint2korr(data + Q_ERR_CODE_OFFSET);
 
 		if (post_header_len - QUERY_HEADER_MINIMAL_LEN)
@@ -194,8 +195,7 @@ int CQueryLogEvent::tune(uint8_t* data, size_t size, const CFormatDescriptionLog
 		data_len -= (_db_len + 1);
 		_q_len = data_len;
 
-		memcpy(_query, data, _q_len);
-		_query[_q_len] = '\0';
+        _query = std::string((char*)data, _q_len);
 	}
 
 	return rc;

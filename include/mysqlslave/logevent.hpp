@@ -391,14 +391,14 @@ public:
 	uint32_t _db_len;
 	uint16_t _error_code;
 	uint16_t _status_vars_len;
-	char _query[1024];
+    std::string _query;
 
 VDEBUG_CHUNK (
 public:
 	virtual void dump(FILE *stream) const
 	{
 		CLogEvent::dump(stream);
-		fprintf(stream, "query '%s' with error_code %d, exec time: %ds\n", _query, (int)_error_code, (int)_q_exec_time);
+        fprintf(stream, "query '%s' with error_code %d, exec time: %ds\n", _query.c_str(), (int)_error_code, (int)_q_exec_time);
 	}
 )
 

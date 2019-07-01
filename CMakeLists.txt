@@ -29,7 +29,7 @@ ENDIF ()
 
 AUX_SOURCE_DIRECTORY(src/mysqlslave SRC_MYSQLSLAVE)
 ADD_LIBRARY(mysqlslave STATIC ${SRC_MYSQLSLAVE})
-TARGET_LINK_LIBRARIES(mysqlslave ${LIB_mysqlclient} z ssl crypto dl)
+TARGET_LINK_LIBRARIES(mysqlslave ${LIB_mysqlclient} z ssl crypto jsoncpp dl)
 
 AUX_SOURCE_DIRECTORY(src/test SRC_MYSQLSLAVE_TEST)
 ADD_EXECUTABLE(test_mysqlslave ${SRC_MYSQLSLAVE_TEST})
