@@ -1,3 +1,9 @@
+libmysqlslave-dev (0.1.4) stable; urgency=low
+
+  * JSON on MariaDB 10.3
+
+ -- agolenev <agolenev@wv00276>  Mon, 01 Jul 2019 16:41:17 +0300
+
 libmysqlslave-dev (0.1.3) stable; urgency=low
 
   * check CRC32 of binlog events

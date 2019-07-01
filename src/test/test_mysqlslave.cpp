@@ -49,7 +49,7 @@ void signal_handler(int sig)
 			fprintf(stdout, "signal %d received, going to terminate\n", sig);
 			test_daemon_ptr->terminate();
 			break;
-		case SIGSEGV:
+        case SIGSEGV:
 		case SIGABRT:
 			fprintf(stdout, "signal %d received, fatal terminate\n", sig);
 			exit(0);
@@ -103,11 +103,11 @@ void test_daemon::init(int argc, char** argv)
 	for (int sig = 1; sig < 32; sig++)
 	{
 		if (SIGKILL == sig || SIGSTOP == sig) continue;
-		if (SIG_ERR == signal(sig, signal_handler))
-		{
-			fprintf(stderr, "can't set handler for %d signal\n", sig);
-			exit(-1);
-		}
+        if (SIG_ERR == signal(sig, signal_handler))
+        {
+            fprintf(stderr, "can't set handler for %d signal\n", sig);
+            exit(-1);
+        }
 	}
 }
 
@@ -160,7 +160,10 @@ int test_daemon::on_insert(const mysql::CTable& tbl, const mysql::CTable::TRows&
 	{
 		for (mysql::CTable::TRows::const_iterator it = rows.begin(); it != rows.end(); ++it)
 		{
-			fprintf(stdout, "id: %u, tm: %u, number: %d, string: %s, amount: %.8lf\n", (*it)["id"].as_uint32(), (unsigned)(*it)["added"].as_timestamp(), (*it)["number"].as_int32(), (*it)["string"].as_string().c_str(), (*it)["amount"].as_double());
+            std::ostringstream os;
+            os << (*it)["json"];
+            auto s = os.str();
+            fprintf(stdout, "id: %u, tm: %u, number: %d, string: %s, amount: %.8lf json:%s\n", (*it)["id"].as_uint32(), (unsigned)(*it)["added"].as_timestamp(), (*it)["number"].as_int32(), (*it)["string"].as_string().c_str(), (*it)["amount"].as_double(), s.c_str());
 		}
 	}
 	return 0;
