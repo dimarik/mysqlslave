@@ -1,8 +1,14 @@
+libmysqlslave-dev (0.1.5) stable; urgency=low
+
+  * JSON on MariaDB 10.3
+
+ -- Alexander Golenev <alex.golenev@gmail.com>>  Mon, 01 Jul 2019 16:41:17 +0300
+
 libmysqlslave-dev (0.1.4) stable; urgency=low
 
- -- Ruslan Osmanov <rrosmanov@gmail.com> Wd, 08 May 2019 16:52:00 +0300
-
   * Improved spec file
+
+ -- Ruslan Osmanov <rrosmanov@gmail.com> Wd, 08 May 2019 16:52:00 +0300
 
 libmysqlslave-dev (0.1.3) stable; urgency=low
 

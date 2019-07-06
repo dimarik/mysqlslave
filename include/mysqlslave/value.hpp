@@ -9,6 +9,8 @@
 #include <limits>
 #include <assert.h>
 
+#include "jsoncpp/json/value.h"
+
 #include "logevent.hpp"
 #include "columndesc.hpp"
 
@@ -61,6 +63,7 @@ public:
 		MYSQL_TYPE_TIMESTAMP2,
 		MYSQL_TYPE_DATETIME2,
 		MYSQL_TYPE_TIME2,
+        MYSQL_TYPE_JSON = 245,
 		MYSQL_TYPE_NEWDECIMAL = 246,
 		MYSQL_TYPE_ENUM = 247,
 		MYSQL_TYPE_SET = 248,
@@ -72,7 +75,32 @@ public:
 		MYSQL_TYPE_STRING = 254,
 		MYSQL_TYPE_GEOMETRY = 255
 	};
+
+    enum EJSONBType
+    {
+        JSONB_TYPE_SMALL_OBJECT = 0x0,
+        JSONB_TYPE_LARGE_OBJECT = 0x1,
+        JSONB_TYPE_SMALL_ARRAY = 0x2,
+        JSONB_TYPE_LARGE_ARRAY = 0x3,
+        JSONB_TYPE_LITERAL = 0x4,
+        JSONB_TYPE_INT16 = 0x5,
+        JSONB_TYPE_UINT16 = 0x6,
+        JSONB_TYPE_INT32 = 0x7,
+        JSONB_TYPE_UINT32 = 0x8,
+        JSONB_TYPE_INT64 = 0x9,
+        JSONB_TYPE_UINT64 = 0xA,
+        JSONB_TYPE_DOUBLE = 0xB,
+        JSONB_TYPE_STRING = 0xC,
+        JSONB_TYPE_OPAQUE = 0xF
+    };
 	
+    enum EJSONBLiteralType
+    {
+        JSONB_LITERAL_NULL = 0x0,
+        JSONB_LITERAL_TRUE = 0x1,
+        JSONB_LITERAL_FALSE = 0x2
+    };
+
 	typedef std::vector<std::string> TSet;
 	
 	static int calc_metadata_size(CValue::EColumnType ftype);
@@ -149,6 +177,17 @@ public:
 	uint64_t as_set() const;
 	void as_set(const mysql::CColumnDesc& desc, CValue::TSet& result) const;
 	std::string as_set(const mysql::CColumnDesc& desc) const;
+
+    void as_json(Json::Value& value) const;
+
+private:
+    size_t _read_jsonb_inline_or_offset(uint8_t &type, Json::Value& value, uint32_t &offset,
+                                        bool &is_offset, const uint8_t* src, bool large) const;
+    size_t _read_jsonb_inlined(Json::Value& value, uint8_t type, const uint8_t* src) const;
+    size_t _read_jsonb_string(Json::Value& value, const uint8_t* src) const;
+    size_t _read_jsonb_array(Json::Value& value, const uint8_t* src, bool large) const;
+    size_t _read_jsonb_object(Json::Value& value, const uint8_t* src, bool large) const;
+    ssize_t _read_jsonb_type(Json::Value& value, uint8_t type, const uint8_t *src) const;
 
 protected:
 	friend std::ostream& operator<<(std::ostream&, const CValue&);
