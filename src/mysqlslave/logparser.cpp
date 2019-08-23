@@ -39,7 +39,7 @@ void CLogParser::connect()
 		throw CException("mysql_real_connect() to '%s:%d' with user '%s' failed: %s",
 			_host.c_str(), _port ? _port : 3306, _user.c_str(), mysql_error(&_mysql));
 	}
-		
+
 	_is_connected = true;
 }
 
@@ -83,9 +83,9 @@ void CLogParser::get_binlog_format()
     char* version = 0;
     bool use_checksum = false;
 
-	if (mysql_query(&_mysql, "SELECT VERSION()") || 
+	if (mysql_query(&_mysql, "SELECT VERSION()") ||
 		!( res = mysql_store_result(&_mysql) ) ||
-		!( row = mysql_fetch_row(res) ) || 
+		!( row = mysql_fetch_row(res) ) ||
         !row[0]
 	)
 	{
@@ -114,12 +114,12 @@ void CLogParser::get_binlog_format()
     mysql_free_result(res);
     res = 0;
 
-    if (*version != '5' && strncmp(version, "10.0", 4) && strncmp(version, "10.1", 4) && strncmp(version, "10.3", 4))
+    if (*version != '5' && strncmp(version, "10.0", 4) && strncmp(version, "10.1", 4) && strncmp(version, "10.3", 4) && strncmp(version, "10.4", 4))
 	{
         free(version);
 		throw CException("invalid server version '%s', should be 5.5, 5.6, 10.0", version);
 	}
-	
+
     if (_fmt.tune(4, version, use_checksum) != 0)
 	{
         free(version);
@@ -142,7 +142,7 @@ void CLogParser::setup_master_binlog_checksum()
 void CLogParser::request_binlog_dump()
 {
 	unsigned char buf[1024];
-	
+
 	if (_binlog_name.empty() || !_binlog_pos)
 	{
 		throw CException("binlog name or position is empty");
@@ -150,7 +150,7 @@ void CLogParser::request_binlog_dump()
 
 	int4store(buf, _binlog_pos);
 	int2store(buf + 4, 0); // flags
-	int4store(buf + 6, _slave_id); 
+	int4store(buf + 6, _slave_id);
 	memcpy(buf + 10, _binlog_name.c_str(), _binlog_name.length());
 	if (simple_command(&_mysql, COM_BINLOG_DUMP, (const unsigned char*)buf, _binlog_name.length() + 10, 1) )
 	{
@@ -180,30 +180,30 @@ void CLogParser::dispatch_events()
 	uint8_t* buf;
 	TDatabases::iterator it_dbs;
     my_bool is_data_packet;
-	
+
 	do
 	{
 		while (_dispatch && !_is_connected) { reconnect(); sleep(1); }
-		
+
         len = cli_safe_read(&_mysql, &is_data_packet);
-		
+
 		if (!_dispatch) return;
-		
+
 		if (len == packet_error || (long)len < 1)
 		{
 			_is_connected = false;
-			throw CException("Error reading packet from server: %s ( server_errno=%d)", 
+			throw CException("Error reading packet from server: %s ( server_errno=%d)",
 							 mysql_error(&_mysql), mysql_errno(&_mysql));
 		}
-		
+
 		if (len < 8 && _mysql.net.read_pos[0] == 254)
 		{
 			_is_connected = false;
 			throw CException("Resv end packet from server,  apparent master shutdown: %s", mysql_error(&_mysql));
 		}
-		
+
 		buf = _mysql.net.read_pos;
-		
+
 		buf++; len--;
 
 		if (len < EVENT_LEN_OFFSET || (uint32_t) len != uint4korr(buf + EVENT_LEN_OFFSET))
@@ -247,7 +247,7 @@ void CLogParser::dispatch_events()
 				_binlog_pos = event_query._log_pos;
 			}
 			break;
-		}		
+		}
 		case TABLE_MAP_EVENT:
 		{
 			CTable* tbl = 0;
@@ -273,7 +273,7 @@ void CLogParser::dispatch_events()
 			{
 				tbl = NULL;
 			}
-			
+
 			if (tbl != NULL)
 			{
 				if (tbl->tune(buf, len, _fmt) != 0 )
@@ -324,7 +324,7 @@ void CLogParser::dispatch_events()
 				throw CLogEventException(&event_row, "tuning failed");
 			}
 			break;
-		}	
+		}
 		case DELETE_ROWS_EVENT:
                case DELETE_ROWS_V2_EVENT:
 		{
@@ -358,7 +358,7 @@ void CLogParser::dispatch_events()
 			}
 		}
 		}
-		
+
         if (_fmt._use_checksum && !(uint2korr(buf + FLAGS_OFFSET) & LOG_EVENT_ARTIFICIAL_F))
         {
             unsigned long received_checksum = uint4korr(buf + (len - 4));
@@ -375,7 +375,7 @@ void CLogParser::dispatch_events()
 	disconnect();
 }
 
-void CLogParser::stop_event_loop() 
+void CLogParser::stop_event_loop()
 {
 	_dispatch = 0;
 	::close(_mysql.net.fd);
@@ -405,14 +405,14 @@ void CLogParser::build_db_structure()
 	MYSQL_RES* res_tbl = 0;
 	MYSQL_RES* res_column = 0;
 	MYSQL_ROW row;
-	
+
 	TDatabases::iterator it_dbs;
-	
+
 	if (_databases.empty())
 	{
 		throw std::runtime_error("build_db_structure() failed: no databases filtered");
 	}
-	
+
 	if ((res_db = mysql_list_dbs(&_mysql, NULL)) == NULL )
 	{
 		throw CException("build_db_structure() call to 'show databases' failed: %s", mysql_error(&_mysql));
@@ -462,9 +462,9 @@ void CLogParser::build_db_structure()
 						}
 						return;
 					}
-					
+
 					size_t pos = 0;
-					while ((row = mysql_fetch_row(res_column)) != NULL) 
+					while ((row = mysql_fetch_row(res_column)) != NULL)
 					{
 						tbl->add_column(row[0], pos++, row[1]);
 					}
@@ -476,12 +476,12 @@ void CLogParser::build_db_structure()
 			res_tbl = NULL;
 		}
 	}
-	
+
 	if (_binlog_name.empty() || !_binlog_pos)
 	{
 		get_last_binlog_position();
 	}
-	
+
 	if (res_db)
 	{
 		mysql_free_result(res_db);
@@ -500,7 +500,7 @@ void CLogParser::get_last_binlog_position()
 {
 	MYSQL_RES* res = 0;
 	MYSQL_ROW row;
-	
+
 	if (mysql_query(&_mysql, "SHOW MASTER STATUS") || (res = mysql_store_result(&_mysql)) == NULL)
 	{
 		throw CException("get_last_binlog_position() call to 'show master status' failed: %s", mysql_error(&_mysql));
@@ -510,14 +510,14 @@ void CLogParser::get_last_binlog_position()
 		}
 		return;
 	}
-	
+
 	if ((row = mysql_fetch_row(res)) == NULL)
 	{
 		throw CException("get_last_binlog_position() 'show master status' returns 0 rows: %s", mysql_error(&_mysql));
 		mysql_free_result(res);
 		return;
 	}
-	
+
 	if (row[0] && row[0][0] && row[1])
 	{
 		_binlog_name = row[0];
