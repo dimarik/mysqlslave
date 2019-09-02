@@ -1,4 +1,4 @@
-#include <mysqlslave/value.hpp>
+#include "mysqlslave/value.hpp"
 #include <jsoncpp/json/writer.h>
 
 extern "C" {
@@ -17,12 +17,12 @@ int CValue::calc_metadata_size(CValue::EColumnType ftype)
 	int rc;
 	switch( ftype ) 
 	{
-	case MYSQL_TYPE_TIMESTAMP:
 	case MYSQL_TYPE_TIMESTAMP2:
 	case MYSQL_TYPE_FLOAT:
 	case MYSQL_TYPE_DOUBLE:
 	case MYSQL_TYPE_BLOB:
 	case MYSQL_TYPE_GEOMETRY:
+    case MYSQL_TYPE_DATETIME2:
 		rc = 1;
 		break;
 	case MYSQL_TYPE_VARCHAR:
@@ -118,9 +118,22 @@ int CValue::calc_field_size(CValue::EColumnType ftype, const uint8_t *pfield, ui
 		length = 4;
 		break;
 	case MYSQL_TYPE_DATETIME:
+        length = 8;
+        break;
 	case MYSQL_TYPE_DATETIME2:
-		abort();
-		length = 8;
+        if (metadata == 1 || metadata == 2)
+        {
+            length = 1;
+        }
+        else if (metadata == 3 || metadata == 4)
+        {
+            length = 2;
+        }
+        else if (metadata == 5 || metadata == 6)
+        {
+            length = 3;
+        }
+        length += 5;
 		break;
 	case MYSQL_TYPE_BIT:
 	{
@@ -668,8 +681,25 @@ CValue::TTime CValue::as_time() const
 	return t;
 }
 
-
 CValue::TDateTime CValue::as_datetime() const
+{
+    if (_type == MYSQL_TYPE_DATETIME)
+    {
+        return _as_datetime();
+    }
+    else if (_type == MYSQL_TYPE_DATETIME2)
+    {
+        return _as_datetime2();
+    }
+    else
+    {
+        TDateTime datetime;
+        memset(&datetime, 0x00, sizeof(CValue::TDateTime));
+        return datetime;
+    }
+}
+
+CValue::TDateTime CValue::_as_datetime() const
 {
 	TDateTime datetime;
 	
@@ -691,6 +721,36 @@ CValue::TDateTime CValue::as_datetime() const
 	datetime.time.s = t % 100;
 	
 	return datetime;
+}
+
+uint64_t CValue::_read_bit_slice(uint64_t binary, uint8_t start, uint8_t size, uint8_t data_length) const
+{
+    uint64_t tmp = binary >> (data_length - (start + size));
+    uint64_t mask = ((uint64_t(1) << size) - 1);
+    return tmp & mask;
+}
+
+CValue::TDateTime CValue::_as_datetime2() const
+{
+    TDateTime datetime;
+
+    if (is_null() || !is_valid() || _size < 5)
+    {
+        memset(&datetime, 0x00, sizeof(CValue::TDateTime));
+        return datetime;
+    }
+
+    uint64_t data = uint5korr(_storage);
+    auto year_month = uint16(data >> 1);
+
+    datetime.date.y = year_month / 13;
+    datetime.date.m = year_month % 13;
+    datetime.date.d = _read_bit_slice(data, 18, 5, 40);
+    datetime.time.h = _read_bit_slice(data, 23, 5, 40);
+    datetime.time.m = _read_bit_slice(data, 28, 6, 40);
+    datetime.time.s = _read_bit_slice(data, 34, 6, 40);
+
+    return datetime;
 }
 
 CValue::TYear CValue::as_year() const 
@@ -862,11 +922,13 @@ std::string CValue::as_set(const mysql::CColumnDesc& desc) const
 	return s;
 }
 
-void CValue::as_json(Json::Value& value) const
+#ifdef MYSQLSLAVE_JSON
+
+Json::Value CValue::as_json() const
 {
     const uint8_t* p = _storage;
     uint8_t type = *p++;
-    _read_jsonb_type(value, type, p);
+    return _read_jsonb_type(type, &p);
 }
 
 struct ValueOrOffset
@@ -877,20 +939,20 @@ struct ValueOrOffset
     uint32_t offset;
 };
 
-size_t CValue::_read_jsonb_inline_or_offset(uint8_t& type, Json::Value& value, uint32_t& offset, bool& is_offset,
-                                            const uint8_t* src, bool large) const
+Json::Value CValue::_read_jsonb_inline_or_offset(uint8_t& type, uint32_t& offset, bool& is_offset,
+                                            const uint8_t **src, bool large) const
 {
-    const uint8_t* p = src;
+    const uint8_t*& p = *src;
     type = *p++;
     if (type == JSONB_TYPE_LITERAL || type == JSONB_TYPE_INT16 || type == JSONB_TYPE_UINT16)
     {
         is_offset = false;
-        p += _read_jsonb_inlined(value, type, p);
+        return _read_jsonb_inlined(type, &p);
     }
     else if ((type == JSONB_TYPE_INT32 || type == JSONB_TYPE_UINT32) && large)
     {
         is_offset = false;
-        p += _read_jsonb_inlined(value, type, p);
+        return _read_jsonb_inlined(type, &p);
     }
     else
     {
@@ -906,52 +968,51 @@ size_t CValue::_read_jsonb_inline_or_offset(uint8_t& type, Json::Value& value, u
             p += 2;
         }
     }
-    return p - src;
+    return Json::Value::null;
 }
 
-size_t CValue::_read_jsonb_inlined(Json::Value& value, uint8_t type, const uint8_t* src) const
+Json::Value CValue::_read_jsonb_inlined(uint8_t type, const uint8_t **src) const
 {
+    const uint8_t*& p = *src;
     switch (type)
     {
     case JSONB_TYPE_LITERAL:
     {
-        uint16_t v = uint2korr(src);
-        if (v == JSONB_LITERAL_NULL)
+        p += 2;
+        switch (uint2korr(p - 2))
         {
-            value = Json::Value(Json::nullValue);
+            case JSONB_LITERAL_NULL:
+                return Json::Value::null;
+            case JSONB_LITERAL_FALSE:
+                return false;
+            case JSONB_LITERAL_TRUE:
+                return true;
+            default:
+                return Json::Value();
         }
-        else if (v == JSONB_LITERAL_FALSE)
-        {
-            value = false;
-        }
-        else if (v == JSONB_LITERAL_TRUE)
-        {
-            value = true;
-        }
-        return 2;
     }
     case JSONB_TYPE_INT16:
-        value = Json::Int(sint2korr(src));
-        return 2;
+        p += 2;
+        return Json::Int(sint2korr(p - 2));
     case JSONB_TYPE_UINT16:
-        value = Json::Int(uint2korr(src));
-        return 2;
+        p += 2;
+        return Json::Int(uint2korr(p - 2));
     case JSONB_TYPE_INT32:
-        value = Json::Int64(sint4korr(src));
-        return 4;
+        p += 4;
+        return Json::Int64(sint4korr(p - 4));
     case JSONB_TYPE_UINT32:
-        value = Json::UInt64(uint4korr(src));
-        return 4;
+        p += 4;
+        return Json::UInt64(uint4korr(p - 4));
     default:
-        return 0;
+        return Json::Value();
     }
 }
 
-size_t CValue::_read_jsonb_string(Json::Value& value, const uint8_t* src) const
+Json::Value CValue::_read_jsonb_string(const uint8_t **src) const
 {
     size_t length = 0;
     uint8_t bits_read = 0;
-    const uint8_t* p = src;
+    const uint8_t*& p = *src;
     do
     {
         length = length | ((*p & 0x7f) << bits_read);
@@ -959,15 +1020,15 @@ size_t CValue::_read_jsonb_string(Json::Value& value, const uint8_t* src) const
     }
     while(*p++ != 0x80);
     const char* cp = (const char*)p;
-    value = Json::Value(cp, cp + length);
-    return (p - src) + length;
+    p += length;
+    return Json::Value(cp, cp + length);
 }
 
-size_t CValue::_read_jsonb_array(Json::Value& value, const uint8_t* src, bool large) const
+Json::Value CValue::_read_jsonb_array(const uint8_t **src, bool large) const
 {
     uint32_t nelems;
     //uint32_t size;
-    const uint8_t* p = src;
+     const uint8_t*& p = *src;
     if (large)
     {
         nelems = uint4korr(p);
@@ -982,35 +1043,33 @@ size_t CValue::_read_jsonb_array(Json::Value& value, const uint8_t* src, bool la
         //size = uint2korr(p);
         p += 2;
     }
-    value = Json::Value(Json::arrayValue);
+    auto value = Json::Value(Json::arrayValue);
     std::vector<ValueOrOffset> values_or_offsets(nelems);
     for (uint32_t i = 0; i < nelems; i++)
     {
-        ValueOrOffset& v = values_or_offsets[i];
-        p += _read_jsonb_inline_or_offset(v.type, v.json_value, v.offset, v.is_offset, p, large);
+        //ValueOrOffset& v = values_or_offsets[i];
+        //v.json_value = _read_jsonb_inline_or_offset(v.type, v.offset, v.is_offset, &p, large);
     }
     for (uint32_t i = 0; i < nelems; i++)
     {
         ValueOrOffset& v = values_or_offsets[i];
-        Json::Value elem;
         if (v.is_offset)
         {
-            p += _read_jsonb_type(elem, EJSONBType(v.type), p);
+            value.append(_read_jsonb_type(EJSONBType(v.type), &p));
         }
         else
         {
-            elem = v.json_value;
+            value.append(v.json_value);
         }
-        value.append(elem);
     }
-    return p - src;
+    return value;
 }
 
-size_t CValue::_read_jsonb_object(Json::Value& value, const uint8_t* src, bool large) const
+Json::Value CValue::_read_jsonb_object(const uint8_t **src, bool large) const
 {
     uint32_t nelems;
     //uint32_t size;
-    const uint8_t* p = src;
+    const uint8_t*& p = *src;
     if (large)
     {
         nelems = uint4korr(p);
@@ -1045,8 +1104,8 @@ size_t CValue::_read_jsonb_object(Json::Value& value, const uint8_t* src, bool l
     std::vector<ValueOrOffset> values_or_offsets(nelems);
     for (uint32_t i = 0; i < nelems; i++)
     {
-        ValueOrOffset& v = values_or_offsets[i];
-        p += _read_jsonb_inline_or_offset(v.type, v.json_value, v.offset, v.is_offset, p, large);
+        //ValueOrOffset& v = values_or_offsets[i];
+        //v.json_value = _read_jsonb_inline_or_offset(v.type, v.offset, v.is_offset, &p, large);
     }
     std::vector<std::string> keys (nelems);
     for (uint32_t i = 0; i < nelems; i++)
@@ -1054,82 +1113,84 @@ size_t CValue::_read_jsonb_object(Json::Value& value, const uint8_t* src, bool l
         keys[i] = std::string((char*)p, key_sizes[i]);
         p += key_sizes[i];
     }
-    value = Json::Value();
+    auto value = Json::Value();
     for (uint32_t i = 0; i < nelems; i++)
     {
         ValueOrOffset& v = values_or_offsets[i];
         if (v.is_offset)
         {
-            p += _read_jsonb_type(value[keys[i]], EJSONBType(v.type), p);
+            value[keys[i]] = _read_jsonb_type(EJSONBType(v.type), &p);
         }
         else
         {
             value[keys[i]] = v.json_value;
         }
     }
-    return p - src;
+    return value;
 }
 
-ssize_t CValue::_read_jsonb_type(Json::Value& value, uint8_t type, const uint8_t* src) const
+Json::Value CValue::_read_jsonb_type(uint8_t type, const uint8_t **src) const
 {
+    const uint8_t*& p = *src;
     switch (type)
     {
         case JSONB_TYPE_SMALL_OBJECT:
-            return _read_jsonb_object(value, src, false);
+            return _read_jsonb_object(src, false);
         case JSONB_TYPE_LARGE_OBJECT:
-            return _read_jsonb_object(value, src, true);
+            return _read_jsonb_object(src, true);
         case JSONB_TYPE_SMALL_ARRAY:
-            return _read_jsonb_array(value, src, false);
+            return _read_jsonb_array(src, false);
         case JSONB_TYPE_LARGE_ARRAY:
-            return _read_jsonb_array(value, src, true);
+            return _read_jsonb_array(src, true);
         case JSONB_TYPE_LITERAL:
         {
-            uint16_t v = uint2korr(src);
-            if (v == JSONB_LITERAL_NULL)
+            p += 2;
+            switch (uint2korr(p - 2))
             {
-                value = Json::Value(Json::nullValue);
+                case JSONB_LITERAL_NULL:
+                    return Json::Value::null;
+                case JSONB_LITERAL_FALSE:
+                    return false;
+                case JSONB_LITERAL_TRUE:
+                    return true;
+                default:
+                    return Json::Value();
             }
-            else if (v == JSONB_LITERAL_FALSE)
-            {
-                value = false;
-            }
-            else if (v == JSONB_LITERAL_TRUE)
-            {
-                value = true;
-            }
-            return 2;
         }
         case JSONB_TYPE_INT16:
-            value = Json::Int(sint2korr(src));
-            return 2;
+            p += 2;
+            return Json::Int(sint2korr(p - 2));
         case JSONB_TYPE_UINT16:
-            value = Json::Int(uint2korr(src));
-            return 2;
+            p += 2;
+            return Json::Int(uint2korr(p - 2));
         case JSONB_TYPE_INT32:
-            value = Json::Int64(sint4korr(src));
-            return 4;
+            p += 4;
+            return Json::Int64(sint4korr(p - 4));
         case JSONB_TYPE_UINT32:
-            value = Json::UInt64(uint4korr(src));
-            return 4;
+            p += 4;
+            return Json::UInt64(uint4korr(p - 4));
         case JSONB_TYPE_INT64:
-            value = Json::Int64(sint8korr(src));
-            return 8;
+            p += 8;
+            return Json::Int64(sint8korr(p - 8));
         case JSONB_TYPE_UINT64:
-            value = Json::UInt64(uint8korr(src));
-            return 8;
+            p += 8;
+            return Json::UInt64(uint8korr(p - 8));
         case JSONB_TYPE_DOUBLE:
         {
             double v;
-            float8get(&v, src);
-            return 8;
+            float8get(&v, p);
+            p += 8;
+            return v;
         }
         case JSONB_TYPE_STRING:
-            return _read_jsonb_string(value, src);
+            return _read_jsonb_string(src);
         //case JSONB_TYPE_OPAQUE:
         default:
-            return -1;
+            return Json::Value();
     }
 }
+
+#endif
 
 std::ostream& operator<<(std::ostream& os, const CValue::TDate& d)
 {
@@ -1217,9 +1278,13 @@ std::ostream& operator<<(std::ostream& os, const CValue& val)
 			break;
 		}
 		case MYSQL_TYPE_DATETIME:
+        {
+            os << val._as_datetime();
+            break;
+        }
 		case MYSQL_TYPE_DATETIME2:
 		{
-			os << val.as_datetime();
+            os << val._as_datetime2();
 			break;
 		}
 		case MYSQL_TYPE_YEAR:
@@ -1227,15 +1292,16 @@ std::ostream& operator<<(std::ostream& os, const CValue& val)
 			os << val.as_year();
 			break;
 		}
+#ifdef MYSQLSLAVE_JSON
         case MYSQL_TYPE_JSON:
         {
-            Json::Value json;
             Json::StreamWriterBuilder _json_builder;
-            val.as_json(json);
+            auto json = val.as_json();
             std::string s = Json::writeString(_json_builder, json);
             os << s;
             break;
         }
+#endif
 		default: {}
 			
 	}
