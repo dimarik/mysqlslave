@@ -158,7 +158,7 @@ public:
 	// date - time
 	
 	time_t as_timestamp() const;
-	TDateTime as_datetime() const;
+    TDateTime as_datetime() const;
 	TDate as_date() const;
 	TTime as_time() const;
 	TYear as_year() const;
@@ -178,16 +178,24 @@ public:
 	void as_set(const mysql::CColumnDesc& desc, CValue::TSet& result) const;
 	std::string as_set(const mysql::CColumnDesc& desc) const;
 
-    void as_json(Json::Value& value) const;
+#ifdef MYSQLSLAVE_JSON
+    Json::Value as_json() const;
 
 private:
-    size_t _read_jsonb_inline_or_offset(uint8_t &type, Json::Value& value, uint32_t &offset,
-                                        bool &is_offset, const uint8_t* src, bool large) const;
-    size_t _read_jsonb_inlined(Json::Value& value, uint8_t type, const uint8_t* src) const;
-    size_t _read_jsonb_string(Json::Value& value, const uint8_t* src) const;
-    size_t _read_jsonb_array(Json::Value& value, const uint8_t* src, bool large) const;
-    size_t _read_jsonb_object(Json::Value& value, const uint8_t* src, bool large) const;
-    ssize_t _read_jsonb_type(Json::Value& value, uint8_t type, const uint8_t *src) const;
+    Json::Value _read_jsonb_inline_or_offset(uint8_t &type, uint32_t &offset,
+                                             bool &is_offset, const uint8_t **src,
+                                             bool large) const;
+    Json::Value _read_jsonb_inlined(uint8_t type, const uint8_t **src) const;
+    Json::Value _read_jsonb_string(const uint8_t **src) const;
+    Json::Value _read_jsonb_array(const uint8_t **src, bool large) const;
+    Json::Value _read_jsonb_object(const uint8_t **src, bool large) const;
+    Json::Value _read_jsonb_type(uint8_t type, const uint8_t **src) const;
+#endif
+
+private:
+    uint64_t _read_bit_slice(uint64_t binary, uint8_t start, uint8_t size, uint8_t data_length) const;
+    TDateTime _as_datetime() const;
+    TDateTime _as_datetime2() const;
 
 protected:
 	friend std::ostream& operator<<(std::ostream&, const CValue&);
