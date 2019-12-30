@@ -40,7 +40,7 @@ int CValue::calc_metadata_size(CValue::EColumnType ftype)
 	
 int CValue::calc_field_size(CValue::EColumnType ftype, const uint8_t *pfield, uint32_t metadata)
 {
-	uint32_t length;
+	uint32_t length = 0;
 
 	switch (ftype) {
 	case MYSQL_TYPE_VAR_STRING:
